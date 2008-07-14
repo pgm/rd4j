@@ -8,7 +8,7 @@
 	<property name="dir.build.classes" value="build/classes" />
 	<property name="dir.build.artifacts" value="build/artifacts" />
 	<property name="build.jar" value="${dir.build.artifacts}/${ant.project.name}.jar" />
-	<property name="dir.src.resources" value="src/resources" />
+	<property name="dir.src.resources" value="src/resource" />
 
 	<target name="define-build-classpath">
 
@@ -41,9 +41,27 @@
 	
 	<target name="jar" depends="compile">
 		<mkdir dir="${dir.build.artifacts}" />
-		<jar destfile="${build.jar}" basedir="${dir.build.classes}"/>
+		<jar destfile="${build.jar}">
+			<fileset dir="${dir.build.classes}">
+			</fileset> 
+			<fileset dir="${dir.src.resources}">
+			</fileset> 
+		</jar>
 	</target>
 
+	<target name="demo" depends="jar">
+		<echo message="Starting jetty server with trivial blog sample application.  Ctrl-C to kill.   Point browser to http://localhost:8080/context to see pages"/>
+
+		<path id="sample.app.classpath">
+			<fileset dir="${dir.lib}">
+				<include name="**/*.jar" />
+			</fileset>
+			<pathelement location="${build.jar}"/>
+		</path>
+		
+		<java fork="true" classname="com.github.rd4j.sample.Launcher" classpathref="sample.app.classpath">
+		</java>
+	</target>
 
 </project>
 	

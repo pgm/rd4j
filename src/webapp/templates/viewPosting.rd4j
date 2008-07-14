@@ -1,0 +1,24 @@
+{% extends "standardLayout.rd4j" %}
+
+{% block title %}
+  {{ post.title }}
+{% endblock title %}
+
+{% block content %}
+<div class="span-24">
+	<p><a href="/context/">Return to main page...</a></p>
+
+	<div class="post-title">
+	<a href="/context/view/{{ post.naturalKey }}"><h3>{{ post.title }}</h3></a>
+	</div>
+
+	<div class="post-caption">
+	<h4>By {{ post.user.name }} on {{ post.postedDate }}</h4>
+	</div>
+
+	<div class="post-body" style="margin-bottom: 4em">
+	{{ post.body }}
+	</div>
+	
+</div>
+{% endblock content %}

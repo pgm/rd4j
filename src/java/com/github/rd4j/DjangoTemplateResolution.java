@@ -1,10 +1,13 @@
 package com.github.rd4j;
 
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
 
 import com.github.rd4j.djangoishtemplate.Template;
@@ -28,9 +31,10 @@ public class DjangoTemplateResolution implements Resolution {
 		return this;
 	}
 
-	Template readTemplateFromFile(String filename) {
+	Template readTemplateFromFile(final ServletContext context, String filename) {
 		try { 
-			FileReader reader = new FileReader("templates/"+filename);
+			InputStream inputStream = context.getResourceAsStream("/templates/"+filename);
+			Reader reader = new InputStreamReader(inputStream);
 			StringBuilder sb = new StringBuilder();
 			char buffer[] = new char[1000];
 			while(true) {
@@ -42,9 +46,11 @@ public class DjangoTemplateResolution implements Resolution {
 			}
 			Template t = new Template(sb.toString(), new TemplateResolver() {
 				public Template findTemplate(String name) {
-					return readTemplateFromFile(name);
+					return readTemplateFromFile(context, name);
 				} 
 			} );
+			
+			inputStream.close();
 			
 			return t;
 		} catch (IOException ex) {
@@ -52,8 +58,8 @@ public class DjangoTemplateResolution implements Resolution {
 		}
 	}
 	
-	public void go(HttpServletResponse response) throws IOException {
-		Template t = readTemplateFromFile(name);
+	public void go(ServletContext context, HttpServletResponse response) throws IOException {
+		Template t = readTemplateFromFile(context, name);
 		t.renderTemplate(response.getWriter(), root);
 	}
 

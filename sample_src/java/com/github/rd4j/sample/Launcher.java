@@ -1,4 +1,4 @@
-package com.github.rd4j;
+package com.github.rd4j.sample;
 
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.webapp.WebAppContext;

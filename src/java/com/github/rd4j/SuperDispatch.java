@@ -65,7 +65,7 @@ public class SuperDispatch extends HttpServlet {
 		}
 		
 		// and execute that resolution
-		resolution.go(response);
+		resolution.go(servletContext, response);
 	}
 
 	public void addPrebindInterceptor(RequestInterceptor interceptor) {

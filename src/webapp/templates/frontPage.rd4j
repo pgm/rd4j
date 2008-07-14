@@ -7,7 +7,7 @@
 {% for post in posts %}
 
 	<div class="post-title">
-	<h3>{{ post.title }}</h3>
+	<a href="/context/view/{{ post.naturalKey }}"><h3>{{ post.title }}</h3></a>
 	</div>
 
 	<div class="post-caption">
@@ -25,7 +25,7 @@
 <p><a href="showNewPostForm">Post a new article</a></p>
 <hr>
 {% for post in posts %}
-	<p><a href="view/{{ post.naturalKey }}">{{ post.title }}</a></p>
+	<p><a href="/context/view/{{ post.naturalKey }}">{{ post.title }}</a></p>
 {% endfor %}
 </div>
 

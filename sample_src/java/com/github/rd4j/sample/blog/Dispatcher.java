@@ -21,6 +21,7 @@ public class Dispatcher extends DefaultDispatcher {
 		
 		addPathesForClass(FrontPage.class);
 		addPathesForClass(SubmitNewStoryPage.class);
+		addPathesForClass(ViewPosting.class);
 		
 		Map<String,Object> params = new HashMap<String,Object>();
 		params.put("servletContext", this.servletContext);

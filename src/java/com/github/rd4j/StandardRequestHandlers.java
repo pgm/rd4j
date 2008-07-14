@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 public class StandardRequestHandlers {
 	public Resolution pageNotFound() {
 		return new Resolution() {
-			public void go(HttpServletResponse response) throws IOException {
+			public void go(ServletContext context, HttpServletResponse response) throws IOException {
 				response.sendError(404, "Page not found");
 			}
 		};
@@ -28,7 +28,7 @@ public class StandardRequestHandlers {
 		}
 		
 		return new Resolution() {
-			public void go(HttpServletResponse response) throws IOException {
+			public void go(ServletContext context, HttpServletResponse response) throws IOException {
 				OutputStream outputStream = response.getOutputStream();
 
 				byte buffer [] = new byte[8*1204];

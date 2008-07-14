@@ -4,11 +4,12 @@ import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Post {
+public class Post implements Entity {
 	String id;
 	String title;
 	String body;
 	String naturalKey;
+	Date postedDate;
 	User user;
 	
 	public String getNaturalKey() {
@@ -24,7 +25,6 @@ public class Post {
 		this.user = user;
 	}
 
-	Date postedDate;
 	
 	public String getId() {
 		return id;

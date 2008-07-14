@@ -8,19 +8,26 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.github.rd4j.sample.blog.domain.Entity;
 import com.github.rd4j.sample.blog.domain.Post;
 import com.github.rd4j.sample.blog.domain.User;
 
 public class DbSession {
-	Map<String, Post> posts = new HashMap<String, Post>();
+	Map<String, Map<String, Entity>> store = new HashMap<String, Map<String, Entity>>();
+	
 	int nextId = 1;
 	
-	public String save(Post p) {
+	public String save(Entity p) {
 		String id = Integer.toString(nextId);
 		nextId ++;
 		
 		p.setId(id);
-		posts.put(p.getId(), p);
+		Map<String, Entity> ps = store.get(p.getClass().getName());
+		if(ps == null) {
+			ps = new HashMap<String, Entity>();
+			store.put(p.getClass().getName(), ps);
+		}
+		ps.put(p.getId(), p);
 		
 		return id;
 	}
@@ -28,6 +35,8 @@ public class DbSession {
 	public DbSession() {
 		User u = new User();
 		u.setName("Jon Doe");
+		u.setEmail("jdoe@sample.com");
+		save(u);
 		
 		Post p = new Post();
 		String body = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
@@ -55,12 +64,23 @@ public class DbSession {
 		save(p);
 	}
 	
+	public Post findPostByNaturalKey(String key) {
+		List<Post> posts = getAllPosts();
+		for(Post p:posts) {
+			if(p.getNaturalKey().equals(key))
+				return p;
+		}
+		return null;
+	}
+	
 	public List<Post> getAllPosts() {
 		List<Post> sortedPosts = new ArrayList<Post>();
-		sortedPosts.addAll(posts.values());
+		for(Entity e:store.get(Post.class.getName()).values()) {
+			sortedPosts.add((Post)e);
+		}
 		Collections.sort(sortedPosts, new Comparator<Post>() {
 			public int compare(Post arg0, Post arg1) {
-				return -arg0.getPostedDate().compareTo(arg1.getPostedDate());
+				return -((Post)arg0).getPostedDate().compareTo(((Post)arg1).getPostedDate());
 			}
 		});
 		

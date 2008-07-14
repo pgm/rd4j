@@ -3,6 +3,7 @@ package com.github.rd4j;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
 
 public class RedirectResolution implements Resolution {
@@ -13,7 +14,7 @@ public class RedirectResolution implements Resolution {
 		this.redirectUrl = redirectUrl;
 	}
 
-	public void go(HttpServletResponse response) throws IOException {
+	public void go(ServletContext context, HttpServletResponse response) throws IOException {
 		response.sendRedirect("/context"+redirectUrl);
 	}
 
