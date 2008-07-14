@@ -1,0 +1,41 @@
+TODO: 
+	Write some real documentation
+
+In the mean time, you can get a feel for the ideas involved by
+running:
+
+	"ant demo"
+
+which will start a trivial mock-blog web app using this 
+framework.  You then can also look at the code under
+sample_src/java/com/github/rd4j/sample/blog and the
+templates under src/webapp/templates.
+
+Things to note:
+
+	- The request/response lifecyle is inspired by Stripes
+	although it is still largely incomplete[3].   But instead of 
+	the request parameters being bound to members of the ActionBean,
+	the parameters are bound to a specific method's parameters.
+	
+	(while there is no good example in this in the sample blog
+	app, the binding does have at least some support for complex
+	property names such as foo.bar[2].name.   However, the 
+	validation is largely absent and I'm still thinking about 
+	how to handle conversion and validation errors.)
+
+	- The templates use approximately the same syntax 
+	as Django[1].  It's (not surprisingly) a subset that
+	I implemented in a very quick fashion.   I think minimal required
+	block types (if, for, block, extends) are implemented.  However,
+	I left out "filters" and other features.
+	
+	- The annotation "@Exposed" on the *Page.java files under
+	sample_src.   Note the url syntax.  It's based on the "named
+	capture" regular expressions that you can use in Django.
+
+References:
+
+[1] http://www.djangoproject.com/documentation/templates/
+[2] http://www.djangoproject.com/documentation/url_dispatch/
+[3] http://www.stripesframework.org/display/stripes/Lifecycles+Etc.
