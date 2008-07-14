@@ -1,0 +1,32 @@
+{% extends "standardLayout.rd4j" %}
+
+{% block content %}
+<h1> Sample blog </h1>
+
+<div class="span-18">
+{% for post in posts %}
+
+	<div class="post-title">
+	<h3>{{ post.title }}</h3>
+	</div>
+
+	<div class="post-caption">
+	<h4>By {{ post.user.name }} on {{ post.postedDate }}</h4>
+	</div>
+
+	<div class="post-body" style="margin-bottom: 4em">
+	{{ post.body }}
+	</div>
+	
+{% endfor %}
+</div>
+
+<div class="span-6 last">
+<p><a href="showNewPostForm">Post a new article</a></p>
+<hr>
+{% for post in posts %}
+	<p><a href="view/{{ post.naturalKey }}">{{ post.title }}</a></p>
+{% endfor %}
+</div>
+
+{% endblock content %}
