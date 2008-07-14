@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="rd4j" default="jar" basedir=".">
+	<property name="dir.src" value="src" />
+	<property name="dir.src.java" value="src/java"/>
+	<property name="dir.lib" value="lib" />
+	<property name="dir.build" value="build" />
+	<property name="dir.build.classes" value="build/classes" />
+	<property name="dir.build.artifacts" value="build/artifacts" />
+	<property name="build.jar" value="${dir.build.artifacts}/${ant.project.name}.jar" />
+	<property name="dir.src.resources" value="src/resources" />
+
+	<target name="define-build-classpath">
+
+		<path id="build.classpath">
+			<fileset dir="${dir.lib}">
+				<include name="**/*.jar" />
+			</fileset>
+
+			<pathelement path="${dir.src.resources}" />
+		</path>
+
+		<property name="build.classpath" refid="build.classpath" />
+	</target>
+
+	<target name="clean">
+		<delete dir="${dir.build}" />
+	</target>
+
+	<target name="compile" depends="define-build-classpath" description="Compiles the java files.">
+		<mkdir dir="${dir.build.classes}" />
+		
+		<javac source="1.5" deprecation="on" optimize="off" debug="on"
+			destdir="${dir.build.classes}">
+			<classpath refid="build.classpath"/>
+			<src path="${dir.src}/java" />
+			<src path="sample_src/java" />
+			<src path="test_src/java" />
+		</javac>
+	</target>
+	
+	<target name="jar" depends="compile">
+		<mkdir dir="${dir.build.artifacts}" />
+		<jar destfile="${build.jar}" basedir="${dir.build.classes}"/>
+	</target>
+
+
+</project>
+	
