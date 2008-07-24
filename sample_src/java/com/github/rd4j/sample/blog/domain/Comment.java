@@ -22,6 +22,4 @@ public class Comment implements Entity {
 	public void setBody(String body) {
 		this.body = body;
 	}
-	
-	
 }

@@ -46,7 +46,7 @@ public class StandardRequestHandlers {
 	
 	public static final String SERVE_TEMPLATED_FILE_METHOD = "serveTemplatedFile";
 	
-	public Resolution serveTemplatedFile(String templateName) {
-		return new DjangoTemplateResolution(templateName+".rd4j");
+	public Resolution serveTemplatedFile(ServletContext context, String templateName) {
+		return new DjangoTemplateResolution(context, templateName+".rd4j");
 	}
 }

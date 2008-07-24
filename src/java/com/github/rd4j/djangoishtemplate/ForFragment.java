@@ -1,7 +1,6 @@
 package com.github.rd4j.djangoishtemplate;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -10,6 +9,7 @@ import java.util.List;
 import com.github.rd4j.expr.Expression;
 import com.github.rd4j.expr.ExpressionUtil;
 import com.github.rd4j.expr.TypedReference;
+import com.github.rd4j.writer.HtmlWriter;
 
 public class ForFragment implements TemplateFragment {
 	private final Expression indexExpr;
@@ -22,7 +22,7 @@ public class ForFragment implements TemplateFragment {
 		this.body = body;
 	}
 	
-	public void render(Writer w, RenderContext renderContext) throws IOException {
+	public void render(HtmlWriter w, RenderContext renderContext) throws IOException {
 		TypedReference indexRef = ExpressionUtil.getReferenceFromExpression(renderContext.root, indexExpr);
 		TypedReference collectionRef = ExpressionUtil.getReferenceFromExpression(renderContext.root, collectionExpr);
 		

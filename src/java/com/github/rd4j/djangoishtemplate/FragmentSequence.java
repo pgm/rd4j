@@ -1,12 +1,13 @@
 package com.github.rd4j.djangoishtemplate;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.github.rd4j.writer.HtmlWriter;
+
 public class FragmentSequence implements TemplateFragment {
-	public void render(Writer w, RenderContext renderContext) throws IOException {
+	public void render(HtmlWriter w, RenderContext renderContext) throws IOException {
 		for(Block block : blocks) {
 			block.fragment.render(w, renderContext);
 		}

@@ -1,8 +1,9 @@
 package com.github.rd4j.djangoishtemplate;
 
 import java.io.IOException;
-import java.io.Writer;
+
+import com.github.rd4j.writer.HtmlWriter;
 
 public interface TemplateFragment {
-	public void render(Writer w, RenderContext renderContext) throws IOException;
+	public void render(HtmlWriter w, RenderContext renderContext) throws IOException;
 }

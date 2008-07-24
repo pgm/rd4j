@@ -11,17 +11,27 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
 
 import com.github.rd4j.djangoishtemplate.Template;
-import com.github.rd4j.djangoishtemplate.TemplateResolver;
+import com.github.rd4j.djangoishtemplate.lookup.DefinitionContext;
+import com.github.rd4j.djangoishtemplate.lookup.Lookup;
+import com.github.rd4j.writer.StreamHtmlWriter;
 
 public class DjangoTemplateResolution implements Resolution {
 	Map<String, Object> root;
 	String name;
+	ServletContext context;
 
-	public DjangoTemplateResolution(String name) {
-		this(name, new HashMap<String,Object>());
+	Lookup<Template> templateLookup = new Lookup<Template>() {
+		public Template get(String name) {
+			return readTemplateFromFile(name);
+		} 
+	};
+	
+	public DjangoTemplateResolution(ServletContext context, String name) {
+		this(context, name, new HashMap<String,Object>());
 	}
 	
-	public DjangoTemplateResolution(String name, Map<String, Object> root) {
+	public DjangoTemplateResolution(ServletContext context, String name, Map<String, Object> root) {
+		this.context = context;
 		this.name = name;
 		this.root = root;
 	}
@@ -31,7 +41,7 @@ public class DjangoTemplateResolution implements Resolution {
 		return this;
 	}
 
-	Template readTemplateFromFile(final ServletContext context, String filename) {
+	Template readTemplateFromFile(String filename) {
 		try { 
 			InputStream inputStream = context.getResourceAsStream("/templates/"+filename);
 			Reader reader = new InputStreamReader(inputStream);
@@ -44,11 +54,8 @@ public class DjangoTemplateResolution implements Resolution {
 	
 				sb.append(buffer, 0, len);
 			}
-			Template t = new Template(sb.toString(), new TemplateResolver() {
-				public Template findTemplate(String name) {
-					return readTemplateFromFile(context, name);
-				} 
-			} );
+
+			Template t = new Template(sb.toString(), new DefinitionContext(null, templateLookup));
 			
 			inputStream.close();
 			
@@ -59,8 +66,8 @@ public class DjangoTemplateResolution implements Resolution {
 	}
 	
 	public void go(ServletContext context, HttpServletResponse response) throws IOException {
-		Template t = readTemplateFromFile(context, name);
-		t.renderTemplate(response.getWriter(), root);
+		Template t = readTemplateFromFile(name);
+		t.renderTemplate(new StreamHtmlWriter(response.getWriter()), root);
 	}
 
 }

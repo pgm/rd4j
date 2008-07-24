@@ -12,5 +12,6 @@ public enum TokenType {
 	VARIABLE,
 	COMMENT,
 	EXTENDS,
+	MACRO,
 	EOF;
 }

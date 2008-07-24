@@ -2,7 +2,6 @@ package com.github.rd4j.djangoishtemplate;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.io.Writer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -13,9 +12,16 @@ import com.github.rd4j.djangoishtemplate.Tokenizer.BlockToken;
 import com.github.rd4j.djangoishtemplate.Tokenizer.ExtendsToken;
 import com.github.rd4j.djangoishtemplate.Tokenizer.ForToken;
 import com.github.rd4j.djangoishtemplate.Tokenizer.IfToken;
+import com.github.rd4j.djangoishtemplate.Tokenizer.MacroToken;
+import com.github.rd4j.djangoishtemplate.lookup.DefinitionContext;
+import com.github.rd4j.writer.HtmlWriter;
 
 public class Template {
-
+	final protected boolean isExtension;
+	
+	final protected TemplateFragment rootFragment;
+	final protected Map<String, TemplateFragment> blocks;
+	
 	protected TemplateFragment parseUntil(Tokenizer t, TokenType terminator) {
 		TemplateFragment fragment = parseUntilEndOfBlock(t, Collections.singleton(terminator));		
 
@@ -73,16 +79,6 @@ public class Template {
 				BlockToken _tk = (BlockToken)tk;
 				TemplateFragment body = parseUntil(t, TokenType.ENDBLOCK);
 				seq.addBlock(new BlockFragment(_tk.name));
-				/*
-				if(isExtension) {
-					if(!blocks.containsKey(_tk.name)) {
-						throw new Exception("");
-					}
-				} else {
-					if(!blocks.containsKey(_tk.name)) {
-						
-					}
-				}*/
 				
 				blocks.put(_tk.name, body);
 
@@ -90,36 +86,30 @@ public class Template {
 				ForToken _tk = (ForToken)tk;
 				TemplateFragment body = parseUntil(t, TokenType.ENDFOR);
 				seq.addBlock(new ForFragment(_tk.elmExpr, _tk.colExpr, body));
+			} else if(tk.type == TokenType.MACRO) {
+				MacroToken _tk = (MacroToken)tk;
+				Macro macro = context.getMacro(_tk.macroName);
+				TemplateFragment body;
+				if(_tk.hasBodyFlag) {
+					body = parseUntil(t, TokenType.ENDBLOCK);
+				} else {
+					body = new NopFragment();
+				}
+				MacroFragment fragment = new MacroFragment(_tk.args, body, macro);
+				seq.addBlock(fragment);
 			} else {
 				throw new RuntimeException("unknown token "+tk.type+"("+tk.image+")");
 			}
 		}
 	}
 
-	final boolean isExtension;
-	
-	final TemplateFragment rootFragment;
-//	final Map<String, Template> definitions;
-	final Map<String, TemplateFragment> blocks;
-	
 	public TemplateFragment getBlock(String name) {
 		return blocks.get(name);
 	}
-	
-	@SuppressWarnings("unchecked")
-	public Template(String body) {
-		this(body, new TemplateResolver() {
-
-			public Template findTemplate(String name) {
-				throw new UnsupportedOperationException("no "+name);
-			} 
-			
-		});
-	}
-	
-	public Template(String body, TemplateResolver resolver)  {
+	DefinitionContext context;
+	public Template(String body, DefinitionContext context)  {
+		this.context = context;
 		this.blocks = new HashMap<String, TemplateFragment>();
-//		this.definitions = definitions;
 
 		Tokenizer t = new Tokenizer(new StringReader(body));
 
@@ -129,7 +119,8 @@ public class Template {
 			ExtendsToken _tk = (ExtendsToken)lookahead;
 
 			// HACK
-			Template parentTemplate = resolver.findTemplate(_tk.name.replace("\"", ""));
+			String templateName = _tk.name.replace("\"", "");
+			Template parentTemplate = context.getTemplate(templateName);
 			this.blocks.putAll(parentTemplate.blocks);
 			this.rootFragment = parentTemplate.rootFragment;
 			
@@ -143,7 +134,7 @@ public class Template {
 		}
 	}
 
-	public void renderTemplate(Writer w, Object root) throws IOException {
+	public void renderTemplate(HtmlWriter w, Object root) throws IOException {
 		RenderContext renderContext = new RenderContext(this, root);
 		rootFragment.render(w, renderContext);
 	}

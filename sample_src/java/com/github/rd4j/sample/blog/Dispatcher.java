@@ -16,7 +16,6 @@ public class Dispatcher extends DefaultDispatcher {
 	protected ServletContext servletContext;
 	
 	public void init(SuperDispatch servlet, ServletConfig config) throws ServletException {
-		
 		servletContext = config.getServletContext();
 		
 		addPathesForClass(FrontPage.class);
@@ -27,7 +26,7 @@ public class Dispatcher extends DefaultDispatcher {
 		params.put("servletContext", this.servletContext);
 		params.put("filesRoot", "/css/");
 		addPath("/css/(?P<path>.*)", "", StandardRequestHandlers.class, StandardRequestHandlers.SERVE_STATIC_FILE_METHOD, params);
-		
+
 		addPath("/(?P<templateName>showNewPostForm)", "", StandardRequestHandlers.class, StandardRequestHandlers.SERVE_TEMPLATED_FILE_METHOD);
 		
 		servlet.addPrebindInterceptor(new InjectorInterceptor());

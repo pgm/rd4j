@@ -4,8 +4,6 @@ package com.github.rd4j.djangoishtemplate;
 public class RenderContext {
 	final Object root;
 	final Template template;
-
-	
 	
 	public RenderContext(Template template, Object root) {
 		super();
@@ -13,9 +11,11 @@ public class RenderContext {
 		this.template = template;
 	}
 
-
-
 	public TemplateFragment getNamedBlock(String name) {
 		return template.getBlock(name);
+	}
+	
+	public Object getRoot() {
+		return this.root;
 	}
 }

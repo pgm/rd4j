@@ -1,11 +1,11 @@
 package com.github.rd4j.djangoishtemplate;
 
 import java.io.IOException;
-import java.io.Writer;
 
 import com.github.rd4j.expr.Expression;
 import com.github.rd4j.expr.ExpressionUtil;
 import com.github.rd4j.expr.TypedReference;
+import com.github.rd4j.writer.HtmlWriter;
 
 public class IfFragment implements TemplateFragment {
 	private final Expression predicate;
@@ -18,7 +18,7 @@ public class IfFragment implements TemplateFragment {
 		this.falseFragment = falseFragment;
 	}
 
-	public void render(Writer w, RenderContext renderContext) throws IOException {
+	public void render(HtmlWriter w, RenderContext renderContext) throws IOException {
 		TypedReference ref = ExpressionUtil.getReferenceFromExpression(renderContext.root, predicate);
 		Object result = ref.get();
 		

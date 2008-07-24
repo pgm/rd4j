@@ -31,6 +31,4 @@ public class User implements Entity {
 	public void setPassword(String password) {
 		this.password = password;
 	}
-	
-	
 }
