@@ -14,20 +14,22 @@ import com.github.rd4j.expr.Expression;
 import com.github.rd4j.expr.LiteralExpression;
 
 public class Tokenizer extends BaseTokenizer {
+	final String name;
 	List<Token> tokenLookahead = new ArrayList<Token>();
 	
-	public Tokenizer(Reader reader) {
+	public Tokenizer(String name, Reader reader) {
 		super(reader);
+		this.name = name;
 	}
 
-	protected void readUntil(char c1, char c2, boolean errorOnEof)
+	protected void readUntil(char c1, char c2, boolean errorOnEof) throws TemplateParseException
 	{	
 		// read until we see a }}
 		while(true) {
 			int c = getc();
 			if(c < 0) {
 				if(errorOnEof)
-					throw new RuntimeException("unexpected EOF");
+					throw new TemplateParseException(this.name, this.curTokenStartLine, this.curTokenStartColumn, "unexpected EOF");
 				
 				return;
 			}
@@ -131,14 +133,17 @@ public class Tokenizer extends BaseTokenizer {
 					constructor = bp.tkClass.getConstructor(types);
 					instance = constructor.newInstance((Object[])args);
 				} catch (Exception e) {
-					throw new RuntimeException(e);
+					// admittedly this might be an internal error -- but telling 
+					// the user where they used a construct that resulted in an 
+					// internal error will also help debug the framework.
+					throw new TemplateParseException(name, this.curTokenStartLine, this.curTokenStartColumn, e);
 				}
 				
 				return (Token)instance;
 			}
 		}
 		
-		throw new RuntimeException("unrecognized block: "+image);
+		throw new TemplateParseException(name, this.curTokenStartLine, this.curTokenStartColumn, "unrecognized block: "+image);
 	}
 	
 	public static class ExtendsToken extends Token {
@@ -199,42 +204,42 @@ public class Tokenizer extends BaseTokenizer {
 			this.macroName = macroName;
 			this.args = parseArgs(args);
 		}
-		
-		static final Pattern argNameAndValue = Pattern.compile("^\\s*(\\S+)\\s*=\\s*\"([^\"]*)\"");
-		
-		public static Map<String, Expression> parseArgs(String args) {
-			Matcher m = argNameAndValue.matcher(args);
-			int nextStart = 0;
-			Map<String, Expression> argMap = new HashMap<String, Expression>();
-
-			while(true) {
-				m.region(nextStart, args.length());
-				if(!m.find()) {
-					break;
-				}
-				
-				String varName = m.group(1);
-				String value = m.group(2);
-				
-				nextStart = m.end();
-				
-				// TODO: check for ${} syntax
-				//Expression expr = ExpressionUtil.parseExpression(value);
-				Expression expr = new LiteralExpression(value);
-				argMap.put(varName, expr);
-			}
-			
-			// verify there is nothing left
-			String remaining = args.substring(nextStart).trim();
-			if(remaining.length() > 0) {
-				throw new RuntimeException("Could not parse argument: "+remaining);
-			}
-			
-			return argMap;
-		}
 	}
-	
-	public Token getNextToken() {
+
+	static final Pattern argNameAndValue = Pattern.compile("^\\s*(\\S+)\\s*=\\s*\"([^\"]*)\"");
+
+	public static Map<String, Expression> parseArgs(String args) {
+		Matcher m = argNameAndValue.matcher(args);
+		int nextStart = 0;
+		Map<String, Expression> argMap = new HashMap<String, Expression>();
+
+		while(true) {
+			m.region(nextStart, args.length());
+			if(!m.find()) {
+				break;
+			}
+			
+			String varName = m.group(1);
+			String value = m.group(2);
+			
+			nextStart = m.end();
+			
+			// TODO: check for ${} syntax
+			//Expression expr = ExpressionUtil.parseExpression(value);
+			Expression expr = new LiteralExpression(value);
+			argMap.put(varName, expr);
+		}
+		
+		// verify there is nothing left
+		String remaining = args.substring(nextStart).trim();
+		if(remaining.length() > 0) {
+			throw new RuntimeException("Could not parse argument: "+remaining);
+		}
+		
+		return argMap;
+	}
+
+	public Token getNextToken() throws TemplateParseException {
 		if(tokenLookahead.size() > 0) {
 			return tokenLookahead.remove(tokenLookahead.size()-1);
 		}

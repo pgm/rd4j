@@ -1,7 +1,7 @@
 package com.github.rd4j.djangoishtemplate;
 
 import java.io.IOException;
-import java.io.StringReader;
+import java.io.Reader;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -21,6 +21,8 @@ public class Template {
 	
 	final protected TemplateFragment rootFragment;
 	final protected Map<String, TemplateFragment> blocks;
+	final DefinitionContext context;
+	final String name;
 	
 	protected TemplateFragment parseUntil(Tokenizer t, TokenType terminator) {
 		TemplateFragment fragment = parseUntilEndOfBlock(t, Collections.singleton(terminator));		
@@ -32,7 +34,7 @@ public class Template {
 		return fragment;
 	}
 	
-	protected TemplateFragment parseUntilEndOfBlock(Tokenizer t, Collection<TokenType> expectedTerminator) {
+	protected TemplateFragment parseUntilEndOfBlock(Tokenizer t, Collection<TokenType> expectedTerminator) throws TemplateParseException {
 		FragmentSequence seq = new FragmentSequence();
 		
 		while(true) {
@@ -51,7 +53,7 @@ public class Template {
 					tk.type == TokenType.EOF ) {
 				
 				if(!expectedTerminator.contains(tk.type)) {
-					throw new RuntimeException("unexpected "+tk.type+", expected one of "+expectedTerminator);
+					throw new TemplateParseException(name, tk.startLine, tk.startColumn, "unexpected "+tk.type+", expected one of "+expectedTerminator);
 				}
 				
 				t.pushNextToken(tk);
@@ -106,12 +108,13 @@ public class Template {
 	public TemplateFragment getBlock(String name) {
 		return blocks.get(name);
 	}
-	DefinitionContext context;
-	public Template(String body, DefinitionContext context)  {
+	
+	public Template(String name, Reader templateSource, DefinitionContext context) throws TemplateParseException {
+		this.name = name;
 		this.context = context;
 		this.blocks = new HashMap<String, TemplateFragment>();
 
-		Tokenizer t = new Tokenizer(new StringReader(body));
+		Tokenizer t = new Tokenizer(name, templateSource);
 
 		Token lookahead = t.getNextToken();
 		if(lookahead.type == TokenType.EXTENDS) {

@@ -1,8 +1,11 @@
 package com.github.rd4j.djangoishtemplate.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,6 +16,7 @@ import com.github.rd4j.djangoishtemplate.Macro;
 import com.github.rd4j.djangoishtemplate.RenderContext;
 import com.github.rd4j.djangoishtemplate.Template;
 import com.github.rd4j.djangoishtemplate.TemplateFragment;
+import com.github.rd4j.djangoishtemplate.TemplateParseException;
 import com.github.rd4j.djangoishtemplate.lookup.DefaultDefinitionContext;
 import com.github.rd4j.expr.Expression;
 import com.github.rd4j.writer.HtmlWriter;
@@ -68,18 +72,18 @@ public class TestTemplates {
 		DefaultDefinitionContext resolver = new DefaultDefinitionContext();
 		resolver.addTemplate("parent", parent);
 
-		Template child = new Template("{% extends parent %} {% block content %} altcontent {% endblock content %}", resolver);
+		Template child = parseTemplate("{% extends parent %} {% block content %} altcontent {% endblock content %}", resolver);
 		
 		assertEquals("start  altcontent * end", renderTemplate(child, this));
 		assertEquals("start  sample text * end", renderTemplate(parent, this));
 		
 		resolver.addTemplate("child", child);
-		Template grandchild = new Template("{% extends child %} {% block final %}!{% endblock final %}", resolver);
+		Template grandchild = parseTemplate("{% extends child %} {% block final %}!{% endblock final %}", resolver);
 		assertEquals("start  altcontent ! end", renderTemplate(grandchild, this));
 	}
 	
 	protected Template createTemplate(String body) {
-		return new Template(body, new DefaultDefinitionContext());
+		return parseTemplate(body, new DefaultDefinitionContext());
 	}
 
 	Macro customTextInput = new Macro() {
@@ -118,7 +122,7 @@ public class TestTemplates {
 		DefaultDefinitionContext resolver = new DefaultDefinitionContext();
 		resolver.addMacro("customTextInput", customTextInput);
 
-		Template t = new Template("start {% customTextInput name=\"firstName\" value=\"smith\" %} end", resolver);
+		Template t = parseTemplate("start {% customTextInput name=\"firstName\" value=\"smith\" %} end", resolver);
 		assertEquals("start <input name=\"firstName\" value=\"smith\" /> end", renderTemplate(t, this));
 	}
 	
@@ -127,7 +131,7 @@ public class TestTemplates {
 		DefaultDefinitionContext resolver = new DefaultDefinitionContext();
 		resolver.addMacro("wrapWithHr", wrapWithHr);
 
-		Template t = new Template("start {% wrapWithHr count=\"3\" begin %} rock {% endblock %} end", resolver);
+		Template t = parseTemplate("start {% wrapWithHr count=\"3\" begin %} rock {% endblock %} end", resolver);
 		assertEquals("start <hr><hr><hr> rock <hr><hr><hr> end", renderTemplate(t, this));
 	}
 
@@ -137,16 +141,33 @@ public class TestTemplates {
 
 		DefaultDefinitionContext resolver = new DefaultDefinitionContext();
 		
-		Template parent = new Template("start {% block content %} sample text {% endblock content %} end", resolver);
+		Template parent = parseTemplate("start {% block content %} sample text {% endblock content %} end", resolver);
 		resolver.addTemplate("parent", parent);
 
-		Template child = new Template("{% extends parent %} {% block content %} 1 {% block inner %} 2 {% endblock inner %}{% endblock content %}", resolver);
+		Template child = parseTemplate("{% extends parent %} {% block content %} 1 {% block inner %} 2 {% endblock inner %}{% endblock content %}", resolver);
 		resolver.addTemplate("child", child);
 
-		Template grandchild = new Template("{% extends child %} {% block inner %} 3 {% endblock inner %}", resolver);
+		Template grandchild = parseTemplate("{% extends child %} {% block inner %} 3 {% endblock inner %}", resolver);
 
 		assertEquals("start  1  2  end", renderTemplate(child, this));
 		assertEquals("start  1  3  end", renderTemplate(grandchild, this));
+	}
+	
+	@Test
+	public void testParseException() throws Exception {
+		DefaultDefinitionContext resolver = new DefaultDefinitionContext();
+		
+		try { 
+			parseTemplate("start {% unknown %} sample text", resolver);
+		} catch (TemplateParseException ex) {
+			assertEquals(1, ex.getLineNumber());
+			// you know, I don't actually care what the column # is as long as it's close
+			assertTrue(7<= ex.getColumn() && ex.getColumn() <= 19);
+			ex.printStackTrace();
+			return;
+		}
+		
+		fail();
 	}
 	
 	String renderTemplate(Template tf, Object root) throws Exception {
@@ -154,6 +175,11 @@ public class TestTemplates {
 		HtmlWriter hw = new StreamHtmlWriter(w);
 		tf.renderTemplate(hw, root);
 		return w.toString();
+	}
+	
+	public Template parseTemplate(String body, DefaultDefinitionContext resolver) {
+		StringReader reader = new StringReader(body);
+		return new Template("<string>", reader, resolver);
 	}
 	
 	public String testValue = "alpha";

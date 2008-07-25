@@ -13,7 +13,7 @@ public class BaseTokenizer {
 	protected int curTokenStartColumn = 0;
 	protected int lastReadLine = 0;
 	protected int lastReadColumn = 0;
-	protected boolean nextCharIsOnANewLine = false;
+	protected boolean nextCharIsOnANewLine = true;
 	
 	boolean isTokenBoundsInvalid = true;
 	

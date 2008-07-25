@@ -45,6 +45,7 @@ public class DjangoTemplateResolution implements Resolution {
 		try { 
 			InputStream inputStream = context.getResourceAsStream("/templates/"+filename);
 			Reader reader = new InputStreamReader(inputStream);
+			/*
 			StringBuilder sb = new StringBuilder();
 			char buffer[] = new char[1000];
 			while(true) {
@@ -54,8 +55,9 @@ public class DjangoTemplateResolution implements Resolution {
 	
 				sb.append(buffer, 0, len);
 			}
+			*/
 
-			Template t = new Template(sb.toString(), new DefinitionContext(null, templateLookup));
+			Template t = new Template(filename, reader, new DefinitionContext(null, templateLookup));
 			
 			inputStream.close();
 			
