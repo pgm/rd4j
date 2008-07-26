@@ -1,11 +1,9 @@
 package com.github.rd4j;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +14,9 @@ import javax.servlet.http.HttpServletRequest;
 import com.github.rd4j.SuperDispatch.DuplicatedParameterException;
 import com.github.rd4j.analysis.MethodParameter;
 import com.github.rd4j.analysis.ParameterTypeReader;
+import com.github.rd4j.scanner.ClassAcceptor;
+import com.github.rd4j.scanner.ClassScanner;
+import com.github.rd4j.scanner.FilterVisitorByClassesAnnotation;
 
 public abstract class DefaultDispatcher implements Dispatcher {
 
@@ -134,21 +135,16 @@ public abstract class DefaultDispatcher implements Dispatcher {
 	}
 	
 	protected void addPathesForPackage(String packageName) {
-		ClassLoader cl = Thread.currentThread().getContextClassLoader();
-		Enumeration<URL> urls;
-		try {
-			urls = cl.getResources(packageName);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		while(urls.hasMoreElements()) {
-			URL url = urls.nextElement();
-
-			Class<?> clazz = convertUrlToClass(url);
-			if(clazz == null)
-				continue;
-
-			addPathesForClass(clazz);
+		ClassLoader classLoader = getClass().getClassLoader();
+		
+		for(String className : ClassScanner.findClassesWithAnnotation(classLoader, packageName)) {
+			Class<?> c;
+			try {
+				c = classLoader.loadClass(className);
+			} catch (ClassNotFoundException e) {
+				throw new RuntimeException(e);
+			}
+			addPathesForClass(c);
 		}
 	}
 	

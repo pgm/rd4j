@@ -17,10 +17,8 @@ public class Dispatcher extends DefaultDispatcher {
 	
 	public void init(SuperDispatch servlet, ServletConfig config) throws ServletException {
 		servletContext = config.getServletContext();
-		
-		addPathesForClass(FrontPage.class);
-		addPathesForClass(SubmitNewStoryPage.class);
-		addPathesForClass(ViewPosting.class);
+
+		addPathesForPackage("com.github.rd4j.sample.blog");
 		
 		Map<String,Object> params = new HashMap<String,Object>();
 		params.put("servletContext", this.servletContext);
@@ -29,7 +27,7 @@ public class Dispatcher extends DefaultDispatcher {
 
 		addPath("/(?P<templateName>showNewPostForm)", "", StandardRequestHandlers.class, StandardRequestHandlers.SERVE_TEMPLATED_FILE_METHOD);
 		
-		servlet.addPrebindInterceptor(new InjectorInterceptor());
+		servlet.addPrebindInterceptor(new InjectorInterceptor(servletContext));
 	}
 
 	

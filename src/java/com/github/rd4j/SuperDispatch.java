@@ -2,6 +2,7 @@ package com.github.rd4j;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -162,6 +163,18 @@ public class SuperDispatch extends HttpServlet {
 	@Override
 	public void init(ServletConfig config) throws ServletException {
 		super.init(config);
+		
+		Enumeration en;
+		try {
+//			en = this.getClass().getClassLoader().getResources("com/github/rd4j/sample/");
+			en = this.getClass().getClassLoader().getResources("org/mortbay/io");
+			while(en.hasMoreElements()) {
+				log.info(en.nextElement());
+			}
+		} catch (IOException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
 		
 		servletContext = config.getServletContext();
 		
