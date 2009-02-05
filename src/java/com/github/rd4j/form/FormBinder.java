@@ -1,11 +1,13 @@
 package com.github.rd4j.form;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +19,7 @@ import com.github.rd4j.expr.ExpressionUtil;
 import com.github.rd4j.expr.TypedReference;
 
 public class FormBinder {
+	/*
 	public static <T extends Form> T bind(Class<T> clazz, Map<String,String> parameters) {
 		T boundData;
 		
@@ -38,6 +41,7 @@ public class FormBinder {
 		
 		return boundData;
 	}
+	*/
 	
 	public static void writeWidget(StringBuilder sb, Class<?> valueType, String name, String fieldName) {
 		if(valueType.equals(String.class)) {
@@ -68,10 +72,18 @@ public class FormBinder {
 		if(type instanceof Class) {
 			Class <?> c = (Class<?>)type;
 			Object instance;
-			try {
-				instance = c.newInstance();
-			} catch (Exception e) {
-				throw new RuntimeException(e);
+			if(c.isAssignableFrom(Map.class)) {
+				instance = new HashMap();
+			} else if(c.isArray()) {
+				instance = Array.newInstance(c.getComponentType(), 0);
+			} else if(c.isAssignableFrom(List.class)) {
+				instance = new ArrayList();
+			} else {
+				try {
+					instance = c.newInstance();
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
 			}
 			reference.set(instance);
 			return instance;
@@ -122,7 +134,7 @@ public class FormBinder {
 				value = Integer.parseInt(valueString);
 				ref.set(value);
 			} catch (NumberFormatException ex) {
-				errorCollection.addError("", "");
+				errorCollection.addError("", "number format");
 			}
 		} else if(type.equals(Double.class)) {
 			try {
@@ -130,9 +142,9 @@ public class FormBinder {
 				value = Double.parseDouble(valueString);
 				ref.set(value);
 			} catch (NumberFormatException ex) {
-				errorCollection.addError("", "");
+				errorCollection.addError("", "double format");
 			}
-		} else if(type.equals(String.class)) {
+		} else if(type.equals(String.class) || type.equals(Object.class)) {
 			ref.set(valueString);
 		} else {
 			throw new RuntimeException("Could not coerce type "+type);

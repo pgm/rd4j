@@ -30,8 +30,11 @@ public class DjangoTemplateResolution implements Resolution {
 		this(context, name, new HashMap<String,Object>());
 	}
 	
-	public DjangoTemplateResolution(ServletContext context, String name, Map<String, Object> root) {
-		this.context = context;
+	public DjangoTemplateResolution(ServletContext servletContext, String name, Map<String, Object> root) {
+		if(servletContext == null)
+			throw new RuntimeException("Servlet context cannot be null");
+		
+		this.context = servletContext;
 		this.name = name;
 		this.root = root;
 	}
@@ -43,19 +46,14 @@ public class DjangoTemplateResolution implements Resolution {
 
 	Template readTemplateFromFile(String filename) {
 		try { 
-			InputStream inputStream = context.getResourceAsStream("/templates/"+filename);
-			Reader reader = new InputStreamReader(inputStream);
-			/*
-			StringBuilder sb = new StringBuilder();
-			char buffer[] = new char[1000];
-			while(true) {
-				int len = reader.read(buffer);
-				if(len <= 0)
-					break;
-	
-				sb.append(buffer, 0, len);
+			String fullFilename = "/templates/"+filename;
+			InputStream inputStream = context.getResourceAsStream(fullFilename);
+			if(inputStream == null)
+			{
+				throw new RuntimeException("Could not find "+fullFilename);
 			}
-			*/
+			
+			Reader reader = new InputStreamReader(inputStream);
 
 			Template t = new Template(filename, reader, new DefinitionContext(null, templateLookup));
 			
