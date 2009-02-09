@@ -1,22 +1,19 @@
 package com.github.rd4j.form;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.github.rd4j.ErrorCollection;
-import com.github.rd4j.TypedMap;
-import com.github.rd4j.expr.AttributeExpression;
-import com.github.rd4j.expr.Expression;
+import com.github.rd4j.expr.AssignmentTree;
+import com.github.rd4j.expr.AssignmentTreeOperation;
 import com.github.rd4j.expr.ExpressionUtil;
-import com.github.rd4j.expr.TypedReference;
+import com.github.rd4j.form.types.BasicType;
+import com.github.rd4j.form.types.CustomClassType;
+import com.github.rd4j.form.types.IndexedType;
+import com.github.rd4j.form.types.Rd4jType;
 
 public class FormBinder {
 	/*
@@ -66,9 +63,9 @@ public class FormBinder {
 		sb.append("</ul>\n");
 	}
 	
-	
+/*	
 	static public Object populateDefault(TypedReference reference) {
-		Type type = reference.getType();
+		Rd4jType type = reference.getType();
 		if(type instanceof Class) {
 			Class <?> c = (Class<?>)type;
 			Object instance;
@@ -91,13 +88,14 @@ public class FormBinder {
 			throw new RuntimeException("unknown type "+type);
 		}
 	}
-	
+	*/
 	
 
-	public static void bind(TypedMap root, Map<String,String>bindings, ErrorCollection errorCollection) {
+	public static void bind(Map<String,Object> root, Map<String,Rd4jType> types, Map<String,String> bindings, ErrorCollection errorCollection) {
 		List<String> keys = new ArrayList<String>();
 		keys.addAll(bindings.keySet());
 
+		/*
 		// sort by length to ensure that shorter pathes are evaluated first
 		Collections.sort(keys, new Comparator<String>() {
 
@@ -109,49 +107,93 @@ public class FormBinder {
 				return o1.length() - o2.length();
 			}
 		});
-		
+		*/
+
+		// construct the tree of expressions.  You could think of it as a prefix tree.  All
+		// common paths are merged into a common node.
+		AssignmentTree assignmentTree = new AssignmentTree("root");
 		for(String key:keys) {
 			String valueString = bindings.get(key);
 			
-			Expression expr = ExpressionUtil.parseExpression(key);
-			String firstAttribute = ((AttributeExpression)expr).getAttribute();
+			// add this expression to the assignment tree
+			// node will point to the terminal leaf of the expression
+			AssignmentTree node = ExpressionUtil.parseExpression(assignmentTree, key);
+
+			node.setValue(valueString);
+		}
+
+		// now that we have the tree and the typed root, walk down the try, trying to convert each node
+		// into a real type.
+		for(String key:assignmentTree.getChildrenNames()) {
+			Rd4jType type = types.get(key);
+			AssignmentTree node = assignmentTree.getOrCreateChild(key, AssignmentTreeOperation.DOT);
+
+			// convert tree and children accordingly
+			Object object = convertTreeToLocalObject(type, node, errorCollection);
+			// and store real object in typed map.  Should get an exception if the 
+			// object is of the wrong type.
+			root.put(key, object);
+		}
+		
+//		// now that we have a fully typed tree, we can recurse on it depth first translating
+//		// 
+//			String firstAttribute = ((AttributeExpression)expr).getAttribute();
+//			
+//			// if we are expecting something with the start of this path, we'll
+//			// try to evaluate the expression.   However, if we don't have an
+//			// object that starts that way, we silently drop the value.
+//			if(root.containsProperty(firstAttribute)) {
+//				TypedReference ref = ExpressionUtil.getReferenceFromExpression(root, expr);
+//				coerceToType(ref, valueString, errorCollection);
+//			} 
+//		}
+	}
+	
+	private static Object convertTreeToLocalObject(Rd4jType type, AssignmentTree node, ErrorCollection errorCollection) {
+		// base case: basic types
+		if(type instanceof BasicType) {
+			BasicType basicType = (BasicType)type;
+			if(node.getChildrenNames().size() > 0)
+				throw new RuntimeException("cannot have children");
+			return basicType.convertFromString(node.getValue());
+		} else if(type instanceof IndexedType){
+			IndexedType indexedType = (IndexedType)type;
 			
-			// if we are expecting something with the start of this path, we'll
-			// try to evaluate the expression.   However, if we don't have an
-			// object that starts that way, we silently drop the value.
-			if(root.containsProperty(firstAttribute)) {
-				TypedReference ref = ExpressionUtil.getReferenceFromExpression(root, expr);
-				coerceToType(ref, valueString, errorCollection);
-			} 
+			// instantiate a new map/list
+			Object localObject = indexedType.create();
+
+			// find the converted for the index
+			BasicType indexType = indexedType.getIndexType();
+			Rd4jType elementType = indexedType.getElementType();
+
+			// go through each child and convert the index from the string(name) and the element(tree)
+			for(String childName : node.getChildrenNames())
+			{
+				Object index = indexType.convertFromString(childName);
+				Object element = convertTreeToLocalObject(elementType, node.getChild(childName), errorCollection);
+				
+				indexedType.set(localObject, index, element);
+			}
+			
+			return localObject;
+		} else if(type instanceof CustomClassType) {
+			CustomClassType customClassType = (CustomClassType)type;
+			
+			Map<String, Object> properties = new HashMap<String, Object>();
+			
+			for(String childName : node.getChildrenNames())
+			{
+				Rd4jType propertyType = customClassType.getPropertyType(childName);
+				Object element = convertTreeToLocalObject(propertyType, node.getChild(childName), errorCollection);
+				properties.put(childName, element);
+			}
+			
+			return customClassType.createNew(properties);
+		}
+		else
+		{
+			throw new RuntimeException("unknown type "+type);
 		}
 	}
-	
-	public static void coerceToType(TypedReference ref, String valueString, ErrorCollection errorCollection) {
-		Type type = ref.getType();
-		if(type.equals(Integer.class)) {
-			try {
-				int value;
-				value = Integer.parseInt(valueString);
-				ref.set(value);
-			} catch (NumberFormatException ex) {
-				errorCollection.addError("", "number format");
-			}
-		} else if(type.equals(Double.class)) {
-			try {
-				double value;
-				value = Double.parseDouble(valueString);
-				ref.set(value);
-			} catch (NumberFormatException ex) {
-				errorCollection.addError("", "double format");
-			}
-		} else if(type.equals(String.class) || type.equals(Object.class)) {
-			ref.set(valueString);
-		} else {
-			throw new RuntimeException("Could not coerce type "+type);
-		}
-	}
-	
-	public static void validateBindings(TypedMap root, ErrorCollection errorCollection) {
-		// walk through properties
-	}
+
 }

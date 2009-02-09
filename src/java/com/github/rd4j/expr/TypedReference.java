@@ -1,9 +1,9 @@
 package com.github.rd4j.expr;
 
-import java.lang.reflect.Type;
+import com.github.rd4j.form.types.Rd4jType;
 
 public interface TypedReference {
 	public Object get();
-	public Type getType(); 
+	public Rd4jType getType(); 
 	public void set(Object obj);
 }

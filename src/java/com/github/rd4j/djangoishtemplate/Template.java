@@ -22,6 +22,7 @@ public class Template {
 	final protected TemplateFragment rootFragment;
 	final protected Map<String, TemplateFragment> blocks;
 	final DefinitionContext context;
+	final ExpressionParser expressionParser;
 	final String name;
 	
 	protected TemplateFragment parseUntil(Tokenizer t, TokenType terminator) {
@@ -32,6 +33,21 @@ public class Template {
 		assert(tk.type == terminator);
 		
 		return fragment;
+	}
+	
+	protected ExpressionFragment createExpressionFragment(String expression)
+	{
+		return new ExpressionFragment(this.expressionParser.parseExpression(expression));
+	}
+	
+	protected IfFragment createIfFragment(String predicate, TemplateFragment trueClause, TemplateFragment falseClause)
+	{
+		return new IfFragment(this.expressionParser.parseExpression(predicate), trueClause, falseClause);
+	}
+	
+	protected ForFragment createForFragment(String var, String collection, TemplateFragment body)
+	{
+		return new ForFragment(this.expressionParser.parseExpression(var), this.expressionParser.parseExpression(collection), body);
 	}
 	
 	protected TemplateFragment parseUntilEndOfBlock(Tokenizer t, Collection<TokenType> expectedTerminator) throws TemplateParseException {
@@ -45,7 +61,7 @@ public class Template {
 			} else if(tk.type == TokenType.RAWTEXT ) {
 				seq.addBlock(new StaticFragment(t.getText()));
 			} else if(tk.type == TokenType.VARIABLE) {
-				seq.addBlock(new ExpressionFragment(t.getText()));
+				seq.addBlock(createExpressionFragment(t.getText()));
 			} else if(tk.type == TokenType.ENDIF ||
 					tk.type == TokenType.ELSE ||
 					tk.type == TokenType.ENDBLOCK || 
@@ -75,7 +91,7 @@ public class Template {
 					falseClause = new NopFragment();
 				}
 				
-				seq.addBlock(new IfFragment(_tk.expr, trueClause, falseClause));
+				seq.addBlock(createIfFragment(_tk.expr, trueClause, falseClause));
 
 			} else if(tk.type == TokenType.BLOCK) {
 				BlockToken _tk = (BlockToken)tk;
@@ -87,7 +103,7 @@ public class Template {
 			} else if(tk.type == TokenType.FOR) { 
 				ForToken _tk = (ForToken)tk;
 				TemplateFragment body = parseUntil(t, TokenType.ENDFOR);
-				seq.addBlock(new ForFragment(_tk.elmExpr, _tk.colExpr, body));
+				seq.addBlock(createForFragment(_tk.elmExpr, _tk.colExpr, body));
 			} else if(tk.type == TokenType.MACRO) {
 				MacroToken _tk = (MacroToken)tk;
 				Macro macro = context.getMacro(_tk.macroName);
@@ -109,7 +125,8 @@ public class Template {
 		return blocks.get(name);
 	}
 	
-	public Template(String name, Reader templateSource, DefinitionContext context) throws TemplateParseException {
+	public Template(String name, Reader templateSource, DefinitionContext context, ExpressionParser expressionParser) throws TemplateParseException {
+		this.expressionParser = expressionParser;
 		this.name = name;
 		this.context = context;
 		this.blocks = new HashMap<String, TemplateFragment>();

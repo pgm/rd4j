@@ -12,17 +12,48 @@ import java.util.Map;
 
 import org.junit.Test;
 
+import com.github.rd4j.djangoishtemplate.ExpressionParser;
 import com.github.rd4j.djangoishtemplate.Macro;
+import com.github.rd4j.djangoishtemplate.ParsedExpression;
 import com.github.rd4j.djangoishtemplate.RenderContext;
 import com.github.rd4j.djangoishtemplate.Template;
 import com.github.rd4j.djangoishtemplate.TemplateFragment;
 import com.github.rd4j.djangoishtemplate.TemplateParseException;
 import com.github.rd4j.djangoishtemplate.lookup.DefaultDefinitionContext;
-import com.github.rd4j.expr.Expression;
 import com.github.rd4j.writer.HtmlWriter;
 import com.github.rd4j.writer.StreamHtmlWriter;
 
 public class TestTemplates {
+	public TestTemplates ()
+	{
+		map.put("testValue", "alpha");
+		map.put("indexValue", "");
+		map.put("sampleValues", new String[] {"cat", "dog", "rat"});
+		map.put("trueProperty", true);
+		map.put("falseProperty", false);
+	}
+	
+	public static class LookupInMap implements ExpressionParser {
+		public ParsedExpression parseExpression(String expression) {
+			final String key = expression;
+			
+			return new ParsedExpression() {
+				public Object get(Object context) {
+					Map map = (Map)context;
+					
+					return map.get(key);
+				}
+
+				public void set(Object context, Object value) {
+					Map map = (Map)context;
+					
+					map.put(key, value);
+				}
+			};
+		}
+	};
+	
+
 	@Test
 	public void testSimple() throws Exception {
 		Template t = createTemplate("no expansion");
@@ -32,37 +63,37 @@ public class TestTemplates {
 	@Test
 	public void testVariable() throws Exception {
 		Template t = createTemplate("testValue = {{ testValue }}");
-		assertEquals("testValue = alpha", renderTemplate(t, this));
+		assertEquals("testValue = alpha", renderTemplate(t, map));
 	}
 	
 	@Test
 	public void testForLoop() throws Exception {
 		Template t = createTemplate("start {% for indexValue in sampleValues %}[{{ indexValue}}] {% endfor %}end");
-		assertEquals("start [cat] [dog] [rat] end", renderTemplate(t, this));
+		assertEquals("start [cat] [dog] [rat] end", renderTemplate(t, map));
 	}
 	
 	@Test
 	public void testIfTrueClause() throws Exception {
 		Template t = createTemplate("start {% if trueProperty %} T {% else %} F {% endif %} end");
-		assertEquals("start  T  end", renderTemplate(t, this));
+		assertEquals("start  T  end", renderTemplate(t, map));
 	}
 
 	@Test
 	public void testIfFalseClause() throws Exception {
 		Template t = createTemplate("start {% if falseProperty %} T {% else %} F {% endif %} end");
-		assertEquals("start  F  end", renderTemplate(t, this));
+		assertEquals("start  F  end", renderTemplate(t, map));
 	}
 	
 	@Test
 	public void testHalfIfTrueClause() throws Exception {
 		Template t = createTemplate("start {% if trueProperty %} T {% endif %} end");
-		assertEquals("start  T  end", renderTemplate(t, this));
+		assertEquals("start  T  end", renderTemplate(t, map));
 	}
 
 	@Test
 	public void testHalfIfFalseClause() throws Exception {
 		Template t = createTemplate("start {% if falseProperty %} T {% endif %} end");
-		assertEquals("start  end", renderTemplate(t, this));
+		assertEquals("start  end", renderTemplate(t, map));
 	}
 	
 	@Test
@@ -88,9 +119,9 @@ public class TestTemplates {
 
 	Macro customTextInput = new Macro() {
 		public void render(HtmlWriter writer,
-				Map<String, Expression> bindings, TemplateFragment body, RenderContext renderContext) {
-			String nameValue = bindings.get("name").eval(renderContext.getRoot()).get().toString();
-			String valueValue = bindings.get("value").eval(renderContext.getRoot()).get().toString();
+				Map<String, ParsedExpression> bindings, TemplateFragment body, RenderContext renderContext) {
+			String nameValue = bindings.get("name").get(renderContext.getRoot()).toString();
+			String valueValue = bindings.get("value").get(renderContext.getRoot()).toString();
 			
 			writer.writeRaw("<input name=\"");
 			writer.writeRaw(nameValue);
@@ -102,8 +133,8 @@ public class TestTemplates {
 
 	Macro wrapWithHr = new Macro() {
 		public void render(HtmlWriter writer,
-				Map<String, Expression> bindings, TemplateFragment body, RenderContext renderContext) throws IOException {
-			String _count = bindings.get("count").eval(renderContext.getRoot()).get().toString();
+				Map<String, ParsedExpression> bindings, TemplateFragment body, RenderContext renderContext) throws IOException {
+			String _count = bindings.get("count").get(renderContext.getRoot()).toString();
 			int count = Integer.parseInt(_count);
 
 			for(int i = 0;i<count;i++)
@@ -179,14 +210,9 @@ public class TestTemplates {
 	
 	public Template parseTemplate(String body, DefaultDefinitionContext resolver) {
 		StringReader reader = new StringReader(body);
-		return new Template("<string>", reader, resolver);
+		return new Template("<string>", reader, resolver, new LookupInMap());
 	}
 	
-	public String testValue = "alpha";
+	Map<String,Object> map = new HashMap<String, Object>();
 	
-	public String indexValue = "";
-	public String [] sampleValues = new String[] {"cat", "dog", "rat"};
-	
-	public boolean trueProperty = true;
-	public boolean falseProperty = false;
 }

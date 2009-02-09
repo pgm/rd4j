@@ -1,5 +1,6 @@
 package com.github.rd4j.djangoishtemplate.lookup;
 
+import com.github.rd4j.djangoishtemplate.ExpressionParser;
 import com.github.rd4j.djangoishtemplate.Macro;
 import com.github.rd4j.djangoishtemplate.Template;
 

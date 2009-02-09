@@ -10,6 +10,7 @@ import java.util.Map;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
 
+import com.github.rd4j.djangoishtemplate.ExpressionParser;
 import com.github.rd4j.djangoishtemplate.Template;
 import com.github.rd4j.djangoishtemplate.lookup.DefinitionContext;
 import com.github.rd4j.djangoishtemplate.lookup.Lookup;
@@ -19,6 +20,7 @@ public class DjangoTemplateResolution implements Resolution {
 	Map<String, Object> root;
 	String name;
 	ServletContext context;
+	ExpressionParser expressionParser;
 
 	Lookup<Template> templateLookup = new Lookup<Template>() {
 		public Template get(String name) {
@@ -55,7 +57,7 @@ public class DjangoTemplateResolution implements Resolution {
 			
 			Reader reader = new InputStreamReader(inputStream);
 
-			Template t = new Template(filename, reader, new DefinitionContext(null, templateLookup));
+			Template t = new Template(filename, reader, new DefinitionContext(null, templateLookup), expressionParser);
 			
 			inputStream.close();
 			

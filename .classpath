@@ -19,5 +19,6 @@
 	<classpathentry kind="lib" path="lib/servlet-api-2.5-6.1.9.jar"/>
 	<classpathentry kind="lib" path="src/resource"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="lib" path="lib/openrdf-sesame-2.2.4-onejar.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

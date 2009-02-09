@@ -3,7 +3,11 @@ package com.github.rd4j;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.Map.Entry;
 
 import javax.servlet.ServletConfig;
@@ -17,6 +21,8 @@ import org.apache.log4j.Logger;
 
 import com.github.rd4j.analysis.MethodParameter;
 import com.github.rd4j.form.FormBinder;
+import com.github.rd4j.form.types.Rd4jType;
+import com.github.rd4j.form.types.Types;
 
 public class SuperDispatch extends HttpServlet {
 
@@ -95,13 +101,12 @@ public class SuperDispatch extends HttpServlet {
 	 * @return An array of parameters that can be passed to the method
 	 */
 	protected Object[] buildArgumentsFromRequest(RequestContext requestContext) {
-
 		MethodParameter[] parameters = requestContext.handler.getMethodParameters();
 		
 		// build a TypedMap with the parameters for the method
-		TypedMap map = new TypedMap();
+		Map<String, Rd4jType> types = new HashMap<String, Rd4jType>();
 		for(MethodParameter mp : parameters) {
-			map.setType(mp.getName(), mp.getType());
+			types.put(mp.getName(), Types.coerceToRd4jType(mp.getType()));
 		}
  		
 		// now perform the conversion from strings to domain types
@@ -111,18 +116,19 @@ public class SuperDispatch extends HttpServlet {
 
 		// use the names of the parameters and the type information in map
 		// to populate that map
-		FormBinder.bind(map, requestContext.parameters, errorCollection);
+		Map map = new HashMap<String, Object>();
+		FormBinder.bind(map, types, requestContext.parameters, errorCollection);
 		
 		// add the request context specially because this varies from
 		// request to request
-		if(map.containsProperty("requestContext")) {
-			map.setValue("requestContext", requestContext);
+		if(types.containsKey("requestContext")) {
+			map.put("requestContext", requestContext);
 		}
 
 		if(requestContext.urlBinding != null) {
 			// Now, add any static parameters (clobbering those that may have come on the url)
 			for(Entry<String,Object>entry : requestContext.urlBinding.staticBindings.entrySet()) {
-				map.setValue(entry.getKey(), entry.getValue());
+				map.put(entry.getKey(), entry.getValue());
 			}
 		}
 		
@@ -131,7 +137,7 @@ public class SuperDispatch extends HttpServlet {
 		for(int i = 0;i<parameters.length; i++) {
 			String parameterName = parameters[i].getName();
 
-			args[i] = map.getValue(parameterName);
+			args[i] = map.get(parameterName);
 		}
 
 		// and return those parameters

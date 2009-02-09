@@ -5,36 +5,52 @@ import static com.github.rd4j.expr.ExpressionTokenizer.IDENTIFIER;
 import static com.github.rd4j.expr.ExpressionTokenizer.NUMBER;
 import static com.github.rd4j.expr.ExpressionTokenizer.STRING;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Type;
-import java.util.List;
-import java.util.Map;
-
-import com.github.rd4j.TypedMap;
-import com.github.rd4j.form.FormBinder;
+import com.github.rd4j.form.types.CustomClassType;
+import com.github.rd4j.form.types.Rd4jType;
+import com.github.rd4j.form.types.Types;
 
 public class ExpressionUtil {
-
-	static Expression parseAttrExpression(ExpressionTokenizer tokenizer) {
-		int token = tokenizer.getNextToken();
-		assert(token == IDENTIFIER);
-		String attributeName = tokenizer.getText();
-
-		return new AttributeExpression(attributeName, parseRemainingExpression(tokenizer));
-	}
-	
-	public static Expression parseExpression(String path) {
+	public static AssignmentTree parseExpression(AssignmentTree root, String path) {
 		ExpressionTokenizer tokenizer = new ExpressionTokenizer(path);
 		try { 
-			return parseAttrExpression(tokenizer);
+			return parseAttrExpression(root, tokenizer);
 		} catch(Exception ex) {
 			throw new RuntimeException("Got exception while parsing \""+path+"\"", ex);
 		}
 	}
 
+	static AssignmentTree parseAttrExpression(AssignmentTree root, ExpressionTokenizer tokenizer) {
+		int token = tokenizer.getNextToken();
+		assert(token == IDENTIFIER);
+		String attributeName = tokenizer.getText();
+
+		AssignmentTree child = root.getOrCreateChild(attributeName, AssignmentTreeOperation.DOT);
+		
+		return parseRemainingExpression(child, tokenizer);
+	}
 	
+	static AssignmentTree parseRemainingExpression(AssignmentTree root, ExpressionTokenizer tokenizer) {
+		int token = tokenizer.getNextToken();
+		if(token == '.') {
+			return parseAttrExpression(root, tokenizer);
+		} else if(token == '[') {
+			int indexToken = tokenizer.getNextToken();
+			assert(indexToken == STRING || indexToken == NUMBER);
+			String index = tokenizer.getText();
+			token = tokenizer.getNextToken();
+			assert(token == ']');
+			
+			AssignmentTree child = root.getOrCreateChild(index, AssignmentTreeOperation.SUBSCRIPT);
+			
+			return parseRemainingExpression(child, tokenizer);
+		} else if(token == EOF) {
+			return root;
+		} else {
+			throw new RuntimeException("unexpected "+token);
+		}
+	}
+	
+	/*
 	public static class UntypedMapReference implements TypedReference {
 		final Map<String,Object> map;
 		final String name;
@@ -50,8 +66,8 @@ public class ExpressionUtil {
 			throw new RuntimeException("map does not contain "+name);
 		}
 		
-		public Type getType() {
-			return Object.class;
+		public Rd4jType getType() {
+			return bject.clasOs;
 		}
 		
 		public void set(Object obj) {
@@ -63,28 +79,6 @@ public class ExpressionUtil {
 	// exp <- exp . var
 	// exp <- exp[index]
 	
-	static Expression parseRemainingExpression(ExpressionTokenizer tokenizer) {
-		int token = tokenizer.getNextToken();
-		if(token == '.') {
-			return parseAttrExpression(tokenizer);
-		} else if(token == '[') {
-			int indexToken = tokenizer.getNextToken();
-			assert(indexToken == STRING || indexToken == NUMBER);
-			String index = tokenizer.getText();
-			token = tokenizer.getNextToken();
-			assert(token == ']');
-
-			if(indexToken == NUMBER) {
-				return new SubscriptExpression(Integer.parseInt(index), parseRemainingExpression(tokenizer));
-			} else {
-				throw new RuntimeException("unimp");
-			}
-		} else if(token == EOF) {
-			return null;
-		} else {
-			throw new RuntimeException("unexpected "+token);
-		}
-	}
 
 	static class PropertyAccessorReference implements TypedReference {
 		final Object target;
@@ -105,7 +99,7 @@ public class ExpressionUtil {
 			}
 		}
 
-		public Type getType() {
+		public Rd4jType getType() {
 			return this.getMethod.getGenericReturnType();
 		}
 
@@ -135,7 +129,7 @@ public class ExpressionUtil {
 			}
 		}
 
-		public Type getType() {
+		public Rd4jType getType() {
 			return this.field.getGenericType();
 		}
 
@@ -193,15 +187,6 @@ public class ExpressionUtil {
 		}
 	}
 
-	static public String constructGetterName(String name) {
-		return "get" + name.substring(0, 1).toUpperCase() + name.substring(1);
-	}
-
-	static public String constructSetterName(String name) {
-		return "set" + name.substring(0, 1).toUpperCase() + name.substring(1);
-	}
-
-	
 	static class ArrayTypedReference implements TypedReference {
 		final Object array;
 		final int index;
@@ -216,7 +201,7 @@ public class ExpressionUtil {
 			return Array.get(array, index);
 		}
 
-		public Type getType() {
+		public Rd4jType getType() {
 			return array.getClass().getComponentType();
 		}
 
@@ -239,7 +224,7 @@ public class ExpressionUtil {
 			return this.list.get(index);
 		}
 
-		public Type getType() {
+		public Rd4jType getType() {
 			throw new RuntimeException("unknown");
 		}
 
@@ -262,7 +247,7 @@ public class ExpressionUtil {
 			return this.map.get(index);
 		}
 
-		public Type getType() {
+		public Rd4jType getType() {
 			throw new RuntimeException("unknown");
 		}
 
@@ -270,8 +255,32 @@ public class ExpressionUtil {
 			this.map.put(index, value);
 		}
 	}
+	*/
 
-	
+	static public String constructGetterName(String name) {
+		return "get" + name.substring(0, 1).toUpperCase() + name.substring(1);
+	}
+
+	static public String constructSetterName(String name) {
+		return "set" + name.substring(0, 1).toUpperCase() + name.substring(1);
+	}
+
+	public static Rd4jType getRd4jType(Class class1) {
+		if(class1.isAssignableFrom(Integer.class))
+		{
+			return Types.INTEGER;
+		} else if (class1.isAssignableFrom(String.class)) {
+			return Types.STRING;
+		} else if (class1.isAssignableFrom(Double.class))
+		{
+			return Types.DOUBLE;
+		} else {
+			return new CustomClassType(class1);
+		}
+	}
+
+
+/*	
 	static public TypedReference getReferenceFromIndex(Object target, Object index) {
 		if(target instanceof Map) {
 			return new MapTypedReference((Map)target, index);
@@ -303,5 +312,6 @@ public class ExpressionUtil {
 		
 		return reference;
 	}
+*/
 	
 }

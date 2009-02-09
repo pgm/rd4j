@@ -10,8 +10,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.github.rd4j.expr.BaseTokenizer;
-import com.github.rd4j.expr.Expression;
-import com.github.rd4j.expr.LiteralExpression;
 
 public class Tokenizer extends BaseTokenizer {
 	final String name;
@@ -196,7 +194,7 @@ public class Tokenizer extends BaseTokenizer {
 	public static class MacroToken extends Token {
 		final boolean hasBodyFlag;
 		final String macroName;
-		final Map<String, Expression> args;
+		final Map<String, ParsedExpression> args;
 		
 		public MacroToken(String image, String macroName, String args, String beginStr, int startLine, int stopLine, int startColumn, int stopColumn) {
 			super(TokenType.MACRO, image, startLine, stopLine, startColumn, stopColumn);
@@ -208,10 +206,10 @@ public class Tokenizer extends BaseTokenizer {
 
 	static final Pattern argNameAndValue = Pattern.compile("^\\s*(\\S+)\\s*=\\s*\"([^\"]*)\"");
 
-	public static Map<String, Expression> parseArgs(String args) {
+	public static Map<String, ParsedExpression> parseArgs(String args) {
 		Matcher m = argNameAndValue.matcher(args);
 		int nextStart = 0;
-		Map<String, Expression> argMap = new HashMap<String, Expression>();
+		Map<String, ParsedExpression> argMap = new HashMap<String, ParsedExpression>();
 
 		while(true) {
 			m.region(nextStart, args.length());
@@ -226,7 +224,7 @@ public class Tokenizer extends BaseTokenizer {
 			
 			// TODO: check for ${} syntax
 			//Expression expr = ExpressionUtil.parseExpression(value);
-			Expression expr = new LiteralExpression(value);
+			ParsedExpression expr = new LiteralExpression(value);
 			argMap.put(varName, expr);
 		}
 		
