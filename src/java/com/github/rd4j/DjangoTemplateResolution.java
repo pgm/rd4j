@@ -10,6 +10,7 @@ import java.util.Map;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
 
+import com.github.rd4j.djangoishtemplate.ExpressionContext;
 import com.github.rd4j.djangoishtemplate.ExpressionParser;
 import com.github.rd4j.djangoishtemplate.Template;
 import com.github.rd4j.djangoishtemplate.lookup.DefinitionContext;
@@ -17,7 +18,7 @@ import com.github.rd4j.djangoishtemplate.lookup.Lookup;
 import com.github.rd4j.writer.StreamHtmlWriter;
 
 public class DjangoTemplateResolution implements Resolution {
-	Map<String, Object> root;
+	ExpressionContext root;
 	String name;
 	ServletContext context;
 	ExpressionParser expressionParser;
@@ -28,11 +29,7 @@ public class DjangoTemplateResolution implements Resolution {
 		} 
 	};
 	
-	public DjangoTemplateResolution(ServletContext context, String name) {
-		this(context, name, new HashMap<String,Object>());
-	}
-	
-	public DjangoTemplateResolution(ServletContext servletContext, String name, Map<String, Object> root) {
+	public DjangoTemplateResolution(ServletContext servletContext, String name, ExpressionContext root) {
 		if(servletContext == null)
 			throw new RuntimeException("Servlet context cannot be null");
 		

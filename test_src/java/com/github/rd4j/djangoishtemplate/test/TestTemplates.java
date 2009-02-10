@@ -12,6 +12,7 @@ import java.util.Map;
 
 import org.junit.Test;
 
+import com.github.rd4j.djangoishtemplate.ExpressionContext;
 import com.github.rd4j.djangoishtemplate.ExpressionParser;
 import com.github.rd4j.djangoishtemplate.Macro;
 import com.github.rd4j.djangoishtemplate.ParsedExpression;
@@ -24,6 +25,42 @@ import com.github.rd4j.writer.HtmlWriter;
 import com.github.rd4j.writer.StreamHtmlWriter;
 
 public class TestTemplates {
+	static class MapExpressionContext implements ExpressionContext
+	{
+		final Map<String, Object> map = new HashMap<String, Object>();
+		
+		public void put(String name, Object value) {
+			map.put(name, value);
+		}
+	}
+	
+	public static class LookupInMap implements ExpressionParser {
+		public ParsedExpression parseExpression(String expression) {
+			final String key = expression.trim();
+			
+			return new ParsedExpression() {
+				public Object get(ExpressionContext context) {
+					MapExpressionContext map = (MapExpressionContext)context;
+					
+					return map.map.get(key);
+				}
+
+				public void set(ExpressionContext context, Object value) {
+					MapExpressionContext map = (MapExpressionContext)context;
+					
+					map.put(key, value);
+				}
+			};
+		}
+
+		public ExpressionContext createContext() {
+			return new MapExpressionContext();
+		}
+	};
+
+	ExpressionParser parser = new LookupInMap();
+	ExpressionContext map = parser.createContext();
+
 	public TestTemplates ()
 	{
 		map.put("testValue", "alpha");
@@ -32,27 +69,6 @@ public class TestTemplates {
 		map.put("trueProperty", true);
 		map.put("falseProperty", false);
 	}
-	
-	public static class LookupInMap implements ExpressionParser {
-		public ParsedExpression parseExpression(String expression) {
-			final String key = expression;
-			
-			return new ParsedExpression() {
-				public Object get(Object context) {
-					Map map = (Map)context;
-					
-					return map.get(key);
-				}
-
-				public void set(Object context, Object value) {
-					Map map = (Map)context;
-					
-					map.put(key, value);
-				}
-			};
-		}
-	};
-	
 
 	@Test
 	public void testSimple() throws Exception {
@@ -105,12 +121,12 @@ public class TestTemplates {
 
 		Template child = parseTemplate("{% extends parent %} {% block content %} altcontent {% endblock content %}", resolver);
 		
-		assertEquals("start  altcontent * end", renderTemplate(child, this));
-		assertEquals("start  sample text * end", renderTemplate(parent, this));
+		assertEquals("start  altcontent * end", renderTemplate(child, null));
+		assertEquals("start  sample text * end", renderTemplate(parent, null));
 		
 		resolver.addTemplate("child", child);
 		Template grandchild = parseTemplate("{% extends child %} {% block final %}!{% endblock final %}", resolver);
-		assertEquals("start  altcontent ! end", renderTemplate(grandchild, this));
+		assertEquals("start  altcontent ! end", renderTemplate(grandchild, null));
 	}
 	
 	protected Template createTemplate(String body) {
@@ -154,7 +170,7 @@ public class TestTemplates {
 		resolver.addMacro("customTextInput", customTextInput);
 
 		Template t = parseTemplate("start {% customTextInput name=\"firstName\" value=\"smith\" %} end", resolver);
-		assertEquals("start <input name=\"firstName\" value=\"smith\" /> end", renderTemplate(t, this));
+		assertEquals("start <input name=\"firstName\" value=\"smith\" /> end", renderTemplate(t, null));
 	}
 	
 	@Test
@@ -163,7 +179,7 @@ public class TestTemplates {
 		resolver.addMacro("wrapWithHr", wrapWithHr);
 
 		Template t = parseTemplate("start {% wrapWithHr count=\"3\" begin %} rock {% endblock %} end", resolver);
-		assertEquals("start <hr><hr><hr> rock <hr><hr><hr> end", renderTemplate(t, this));
+		assertEquals("start <hr><hr><hr> rock <hr><hr><hr> end", renderTemplate(t, null));
 	}
 
 	@Test
@@ -180,8 +196,8 @@ public class TestTemplates {
 
 		Template grandchild = parseTemplate("{% extends child %} {% block inner %} 3 {% endblock inner %}", resolver);
 
-		assertEquals("start  1  2  end", renderTemplate(child, this));
-		assertEquals("start  1  3  end", renderTemplate(grandchild, this));
+		assertEquals("start  1  2  end", renderTemplate(child, null));
+		assertEquals("start  1  3  end", renderTemplate(grandchild, null));
 	}
 	
 	@Test
@@ -201,7 +217,7 @@ public class TestTemplates {
 		fail();
 	}
 	
-	String renderTemplate(Template tf, Object root) throws Exception {
+	String renderTemplate(Template tf, ExpressionContext root) throws Exception {
 		StringWriter w = new StringWriter();
 		HtmlWriter hw = new StreamHtmlWriter(w);
 		tf.renderTemplate(hw, root);
@@ -212,7 +228,4 @@ public class TestTemplates {
 		StringReader reader = new StringReader(body);
 		return new Template("<string>", reader, resolver, new LookupInMap());
 	}
-	
-	Map<String,Object> map = new HashMap<String, Object>();
-	
 }

@@ -2,10 +2,10 @@ package com.github.rd4j.djangoishtemplate;
 
 
 public class RenderContext {
-	final Object root;
-	final Template template;
+	private final ExpressionContext root;
+	private final Template template;
 	
-	public RenderContext(Template template, Object root) {
+	public RenderContext(Template template, ExpressionContext root) {
 		super();
 		this.root = root;
 		this.template = template;
@@ -15,7 +15,7 @@ public class RenderContext {
 		return template.getBlock(name);
 	}
 	
-	public Object getRoot() {
+	public ExpressionContext getRoot() {
 		return this.root;
 	}
 }

@@ -9,6 +9,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
 
 public class StandardRequestHandlers {
+	
 	public Resolution pageNotFound() {
 		return new Resolution() {
 			public void go(ServletContext context, HttpServletResponse response) throws IOException {
@@ -47,6 +48,7 @@ public class StandardRequestHandlers {
 	public static final String SERVE_TEMPLATED_FILE_METHOD = "serveTemplatedFile";
 	
 	public Resolution serveTemplatedFile(ServletContext servletContext, String templateName) {
-		return new DjangoTemplateResolution(servletContext, templateName+".rd4j");
+		DjangoTemplateResolutionFactory djangoTemplateResolutionFactory = new DjangoTemplateResolutionFactory(servletContext);
+		return djangoTemplateResolutionFactory.create(templateName+".rd4j");
 	}
 }

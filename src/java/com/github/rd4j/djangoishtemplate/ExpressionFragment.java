@@ -12,7 +12,7 @@ public class ExpressionFragment implements TemplateFragment {
 	}
 	
 	public void render(HtmlWriter w, RenderContext renderContext) throws IOException {
-		Object value = expression.get(renderContext.root);
+		Object value = expression.get(renderContext.getRoot());
 		w.writeEscaped(value.toString());
 	}
 

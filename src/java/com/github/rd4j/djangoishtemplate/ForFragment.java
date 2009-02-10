@@ -20,9 +20,9 @@ public class ForFragment implements TemplateFragment {
 	}
 	
 	public void render(HtmlWriter w, RenderContext renderContext) throws IOException {
-		Iterator<?> it = coerceToIterator(this.collectionExpr.get(renderContext.root));
+		Iterator<?> it = coerceToIterator(this.collectionExpr.get(renderContext.getRoot()));
 		while(it.hasNext()) {
-			indexExpr.set(renderContext.root, it.next());
+			indexExpr.set(renderContext.getRoot(), it.next());
 			body.render(w, renderContext);
 		}
 	}

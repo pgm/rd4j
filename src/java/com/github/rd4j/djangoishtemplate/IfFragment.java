@@ -16,7 +16,7 @@ public class IfFragment implements TemplateFragment {
 	}
 
 	public void render(HtmlWriter w, RenderContext renderContext) throws IOException {
-		Object result = predicate.get(renderContext.root);
+		Object result = predicate.get(renderContext.getRoot());
 		
 		if(coerceToBoolean(result)) {
 			trueFragment.render(w, renderContext);

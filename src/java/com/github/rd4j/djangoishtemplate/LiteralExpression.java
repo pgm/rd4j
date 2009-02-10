@@ -8,11 +8,11 @@ public class LiteralExpression implements ParsedExpression {
 		this.value = value;
 	}
 	
-	public Object get(Object context) {
+	public Object get(ExpressionContext context) {
 		return this.value;
 	}
 
-	public void set(Object context, Object value) {
+	public void set(ExpressionContext context, Object value) {
 		throw new UnsupportedOperationException();
 	}
 

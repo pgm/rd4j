@@ -154,7 +154,7 @@ public class Template {
 		}
 	}
 
-	public void renderTemplate(HtmlWriter w, Object root) throws IOException {
+	public void renderTemplate(HtmlWriter w, ExpressionContext root) throws IOException {
 		RenderContext renderContext = new RenderContext(this, root);
 		rootFragment.render(w, renderContext);
 	}
