@@ -126,6 +126,10 @@ public class FormBinder {
 		// into a real type.
 		for(String key:assignmentTree.getChildrenNames()) {
 			Rd4jType type = types.get(key);
+			if(type == null)
+			{
+				throw new RuntimeException("No type bound for parameter "+key);
+			}
 			AssignmentTree node = assignmentTree.getOrCreateChild(key, AssignmentTreeOperation.DOT);
 
 			// convert tree and children accordingly
@@ -184,6 +188,10 @@ public class FormBinder {
 			for(String childName : node.getChildrenNames())
 			{
 				Rd4jType propertyType = customClassType.getPropertyType(childName);
+				if(propertyType == null)
+				{
+					throw new RuntimeException("No type for "+childName);
+				}
 				Object element = convertTreeToLocalObject(propertyType, node.getChild(childName), errorCollection);
 				properties.put(childName, element);
 			}

@@ -2,9 +2,12 @@ package com.github.rd4j.form.types;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.github.rd4j.DefaultDispatcher;
+import com.github.rd4j.analysis.MethodParameter;
 import com.github.rd4j.expr.ExpressionUtil;
 
 public class CustomClassType implements ClassType {
@@ -28,13 +31,15 @@ public class CustomClassType implements ClassType {
 			}
 		}
 		
+		this.constructor = bestFound;
 		if(bestFound == null)
 		{
-			throw new RuntimeException("Could not find constructor with arguments for "+clazz);
+			return;
 		}
 		
-		this.constructor = bestFound;
 		Class[] parameterTypes = constructor.getParameterTypes();
+		String parameterNames[] = getParameterNames(constructor);
+		
 		int i = 0;
 		for(Annotation[] annotations : this.constructor.getParameterAnnotations())
 		{
@@ -49,13 +54,25 @@ public class CustomClassType implements ClassType {
 			
 			if(parameterName == null)
 			{
-				throw new RuntimeException("could not get parameter name of argument "+i);
+				parameterName = parameterNames[i];
 			}
 			
 			propertyInteger.put(parameterName, i);
 			propertyTypes.put(parameterName, ExpressionUtil.getRd4jType(parameterTypes[i]));
 			i++;
 		}
+	}
+
+	public String[] getParameterNames(Constructor method)
+	{
+		Map<String, MethodParameter[]> map = DefaultDispatcher.getMethodParameterMap(method.getDeclaringClass());
+		MethodParameter [] parameters = map.get("_init_");
+		String [] parameterNames = new String[parameters.length];
+		for(int i=0;i<parameters.length;i++)
+		{
+			parameterNames[i] = parameters[i].getName();
+		}
+		return parameterNames;
 	}
 	
 	public Rd4jType getPropertyType(String childName) {

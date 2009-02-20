@@ -19,9 +19,9 @@ import com.github.rd4j.writer.StreamHtmlWriter;
 
 public class DjangoTemplateResolution implements Resolution {
 	ExpressionContext root;
-	String name;
-	ServletContext context;
-	ExpressionParser expressionParser;
+	final String name;
+	final ServletContext context;
+	final ExpressionParser expressionParser;
 
 	Lookup<Template> templateLookup = new Lookup<Template>() {
 		public Template get(String name) {
@@ -29,13 +29,14 @@ public class DjangoTemplateResolution implements Resolution {
 		} 
 	};
 	
-	public DjangoTemplateResolution(ServletContext servletContext, String name, ExpressionContext root) {
+	public DjangoTemplateResolution(ServletContext servletContext, String name, ExpressionContext root, ExpressionParser expressionParser) {
 		if(servletContext == null)
 			throw new RuntimeException("Servlet context cannot be null");
-		
+
 		this.context = servletContext;
 		this.name = name;
 		this.root = root;
+		this.expressionParser = expressionParser;
 	}
 	
 	public DjangoTemplateResolution addAttribute(String name, Object value) {

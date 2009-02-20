@@ -22,5 +22,6 @@
 	<classpathentry kind="lib" path="lib/openrdf-sesame-2.2.4-onejar.jar"/>
 	<classpathentry kind="lib" path="lib/commons-jexl-1.1.jar"/>
 	<classpathentry kind="lib" path="lib/commons-logging-1.1.1.jar"/>
+	<classpathentry kind="lib" path="lib/spring.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

@@ -126,6 +126,9 @@ public class Template {
 	}
 	
 	public Template(String name, Reader templateSource, DefinitionContext context, ExpressionParser expressionParser) throws TemplateParseException {
+		if(expressionParser == null)
+			throw new RuntimeException("expression parser cannot be null");
+		
 		this.expressionParser = expressionParser;
 		this.name = name;
 		this.context = context;

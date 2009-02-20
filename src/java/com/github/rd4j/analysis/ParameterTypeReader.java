@@ -92,8 +92,9 @@ public class ParameterTypeReader {
 				Method methodRef = nameToMethod.get(node.name);
 				if (methodRef == null)
 					continue;
-				Class<?> parameterTypes [] = methodRef.getParameterTypes();
-
+				
+				java.lang.reflect.Type[] parameterTypes = methodRef.getGenericParameterTypes();
+				
 				for(int i = 0; i<argTypes.length; i++) {
 					LocalVariableNode local = (LocalVariableNode) node.localVariables.get(i+start);
 					if(local.index != i+start) {

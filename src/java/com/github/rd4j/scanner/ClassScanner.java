@@ -11,8 +11,6 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import com.github.rd4j.BoundUrl;
-
 public class ClassScanner {
 	static interface Visitor {
 		void visit(String name, InputStream contents);
@@ -73,7 +71,7 @@ public class ClassScanner {
 		}
 	}
 	
-	public static List<String> findClassesWithAnnotation(ClassLoader classLoader, String packageName) {
+	public static List<String> findClassesWithAnnotation(ClassLoader classLoader, String packageName, Class<?> annotationClass) {
 		final List<String> classNames = new ArrayList<String>();
 		
 		ClassAcceptor classAcceptor = new ClassAcceptor() {
@@ -84,7 +82,7 @@ public class ClassScanner {
 		
 		ClassScanner.findInClasspath(classLoader, 
 			packageName, 
-			new FilterVisitorByClassesAnnotation(BoundUrl.class, classAcceptor));
+			new FilterVisitorByClassesAnnotation(annotationClass, classAcceptor));
 		
 		return classNames;
 	}

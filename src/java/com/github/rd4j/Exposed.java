@@ -8,6 +8,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface Exposed {
-	String url();
-	String action();
+	String url() default "";
+	String action() default "";
+	boolean defaultHandler() default false;
 }

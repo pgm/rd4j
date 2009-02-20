@@ -2,12 +2,9 @@ package com.github.rd4j;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
 
 import javax.servlet.ServletConfig;
@@ -68,7 +65,7 @@ public class SuperDispatch extends HttpServlet {
 			Object args[] = buildArgumentsFromRequest(bound);
 		
 			// execute the method to get a resolution
-			resolution = bound.handler.invoke(args);
+			resolution = bound.getHandler().invoke(args);
 		}
 		
 		// and execute that resolution
@@ -101,7 +98,7 @@ public class SuperDispatch extends HttpServlet {
 	 * @return An array of parameters that can be passed to the method
 	 */
 	protected Object[] buildArgumentsFromRequest(RequestContext requestContext) {
-		MethodParameter[] parameters = requestContext.handler.getMethodParameters();
+		MethodParameter[] parameters = requestContext.getHandler().getParameters();
 		
 		// build a TypedMap with the parameters for the method
 		Map<String, Rd4jType> types = new HashMap<String, Rd4jType>();
@@ -117,7 +114,7 @@ public class SuperDispatch extends HttpServlet {
 		// use the names of the parameters and the type information in map
 		// to populate that map
 		Map map = new HashMap<String, Object>();
-		FormBinder.bind(map, types, requestContext.parameters, errorCollection);
+		FormBinder.bind(map, types, requestContext.getParameters(), errorCollection);
 		
 		// add the request context specially because this varies from
 		// request to request
@@ -125,9 +122,9 @@ public class SuperDispatch extends HttpServlet {
 			map.put("requestContext", requestContext);
 		}
 
-		if(requestContext.urlBinding != null) {
+		if(requestContext.getUrlBinding() != null) {
 			// Now, add any static parameters (clobbering those that may have come on the url)
-			for(Entry<String,Object>entry : requestContext.urlBinding.staticBindings.entrySet()) {
+			for(Entry<String,Object>entry : requestContext.getUrlBinding().staticBindings.entrySet()) {
 				map.put(entry.getKey(), entry.getValue());
 			}
 		}
@@ -144,43 +141,9 @@ public class SuperDispatch extends HttpServlet {
 		return args;
 	}
 	
-	/** 
-	 * Convert a string to a value with the requested type
-	 * 
-	 * @param destType
-	 * @param values
-	 * @return an instance of type destType
-	 */
-/*	public Object coerceToType(Class<?> destType, String[] values, ErrorCollection errorCollector) {
-		// this needs a lot of work
-		if(destType.equals(String.class)) {
-			if(values == null) {
-				return null;
-			}
-			assert(values.length == 1);
-			return values[0];
-		} else if (destType.equals(Integer.class) || destType.getName().equals("int")) {
-			assert(values.length == 1);
-			return Integer.parseInt(values[0]);
-		}
-		throw new RuntimeException("could not coerce");
-	}
-*/	
 	@Override
 	public void init(ServletConfig config) throws ServletException {
 		super.init(config);
-		
-		Enumeration en;
-		try {
-//			en = this.getClass().getClassLoader().getResources("com/github/rd4j/sample/");
-			en = this.getClass().getClassLoader().getResources("org/mortbay/io");
-			while(en.hasMoreElements()) {
-				log.info(en.nextElement());
-			}
-		} catch (IOException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
 		
 		servletContext = config.getServletContext();
 		

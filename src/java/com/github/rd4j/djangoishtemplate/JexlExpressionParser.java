@@ -1,6 +1,9 @@
 package com.github.rd4j.djangoishtemplate;
 
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.commons.jexl.Expression;
 import org.apache.commons.jexl.ExpressionFactory;
 import org.apache.commons.jexl.JexlContext;
@@ -8,8 +11,9 @@ import org.apache.commons.jexl.JexlHelper;
 
 public class JexlExpressionParser implements ExpressionParser {
 
-	public ParsedExpression parseExpression(String expressionStr) {
+	public ParsedExpression parseExpression(final String expressionStr) {
 		final Expression expression;
+		
 		try {
 			expression = ExpressionFactory.createExpression( expressionStr );
 		} catch (Exception e) {
@@ -27,14 +31,19 @@ public class JexlExpressionParser implements ExpressionParser {
 			}
 
 			public void set(ExpressionContext context, Object value) {
-				throw new RuntimeException("unsupported");
+				// just a heuristic of expressions we cannot set.  Certainly not exhaustive
+				if(expressionStr.contains(".") || expressionStr.contains("[") || expressionStr.contains("]"))
+				{
+					throw new RuntimeException("cannot set expression="+expressionStr);
+				}
+				((JexlExpressionContext)context).put(expressionStr, value);
 			}
 		};
 	}
 
 	public class JexlExpressionContext implements ExpressionContext {
 		final JexlContext context = JexlHelper.createContext();
-
+		
 		public JexlContext getContext() {
 			return context;
 		}

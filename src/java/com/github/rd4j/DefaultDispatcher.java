@@ -14,9 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.github.rd4j.SuperDispatch.DuplicatedParameterException;
 import com.github.rd4j.analysis.MethodParameter;
 import com.github.rd4j.analysis.ParameterTypeReader;
-import com.github.rd4j.scanner.ClassAcceptor;
 import com.github.rd4j.scanner.ClassScanner;
-import com.github.rd4j.scanner.FilterVisitorByClassesAnnotation;
 
 public abstract class DefaultDispatcher implements Dispatcher {
 
@@ -37,7 +35,8 @@ public abstract class DefaultDispatcher implements Dispatcher {
 	
 	List<UrlBinding> bindings = new ArrayList<UrlBinding>();
 
-	static Map<String,MethodParameter[]> getMethodParameterMap(Class<?> clazz) {
+	// perhaps turn this into a caching call
+	public static Map<String,MethodParameter[]> getMethodParameterMap(Class<?> clazz) {
 		Map<String,MethodParameter[]> map = ParameterTypeReader.getMethodParameters(clazz);
 		return map;
 	}
@@ -45,20 +44,14 @@ public abstract class DefaultDispatcher implements Dispatcher {
 	final MethodAndParams notFoundHandler;
 	
 	public DefaultDispatcher() {
-		notFoundHandler = constructMethodAndParams(StandardRequestHandlers.class, "pageNotFound", "");
+		notFoundHandler = constructMethodAndParams(StandardRequestHandlers.class, "pageNotFound");
 	}
 	
 	protected MethodParameter[] getParameters(Class<?> clazz, String methodName) {
 		return getMethodParameterMap(clazz).get(methodName);
 	}
 
-	static class MethodAndParams {
-		public String action;
-		public Method method;
-		public MethodParameter parameters[];
-	}
-
-	protected MethodAndParams constructMethodAndParams(Class<?> clazz, String methodName, String action) {
+	protected MethodAndParams constructMethodAndParams(Class<?> clazz, String methodName) {
 		Method methodRef = null;
 		for(Method m : clazz.getMethods()) {
 			if(m.getName().equals(methodName)) {
@@ -72,15 +65,23 @@ public abstract class DefaultDispatcher implements Dispatcher {
 		}
 
 		MethodParameter parameters[] = getParameters(clazz, methodName);
-		MethodAndParams mp = new MethodAndParams();
-		mp.action = action;
-		mp.method = methodRef;
-		mp.parameters = parameters;
+		Object instance = createInstance(clazz);
+		MethodAndParams mp = new MethodAndParams(instance, methodRef, parameters);
 		return mp;
 	}
 	
+	private Object createInstance(Class<?> clazz) {
+		try {
+			return clazz.newInstance();
+		} catch (InstantiationException e) {
+			throw new RuntimeException(e);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	protected void addPath(String path, String action, Class<?> clazz, String methodName, Map<String,Object>staticParameters) {
-		MethodAndParams mp = constructMethodAndParams(clazz, methodName, action);
+		MethodAndParams mp = constructMethodAndParams(clazz, methodName);
 		
 		bindings.add(new UrlBinding(path, mp, action, staticParameters));
 	}
@@ -88,39 +89,7 @@ public abstract class DefaultDispatcher implements Dispatcher {
 	protected void addPath(String path, String action, Class<?> clazz, String methodName) {
 		addPath(path, action, clazz, methodName, Collections.EMPTY_MAP);
 	}
-
-	static public BoundMethod constructBoundMethod(MethodAndParams mp) {
-		Class<?> clazz = mp.method.getDeclaringClass();
-		Object instance;
-		try {
-			instance = clazz.newInstance();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-		
-		return new BoundMethod(mp.parameters, instance, mp.method);
-	}
 	
-/*	
-	public BoundMethod getMethod(String path, HttpServletRequest request) {
-		List<MethodAndParams> mps = mappedPaths.get(path);
-
-		if(mps == null) {
-			throw new RuntimeException("path "+path+" is unmapped.  Mapped paths are: "+mappedPaths.keySet());
-		}
-		
-		MethodAndParams handler = null;
-		for(MethodAndParams mp : mps) {
-			if(mp.action.equals("*")) {
-				handler = mp;
-			} else if(request.getParameter("action_"+mp.action) != null) {
-				handler = mp;
-				break;
-			}
-		}
-	}
-*/
-
 	protected void addPathesForClass(Class<?> clazz) {
 		for(Method m : clazz.getMethods()) {
 			Exposed exposed = m.getAnnotation(Exposed.class);
@@ -137,10 +106,10 @@ public abstract class DefaultDispatcher implements Dispatcher {
 	protected void addPathesForPackage(String packageName) {
 		ClassLoader classLoader = getClass().getClassLoader();
 		
-		for(String className : ClassScanner.findClassesWithAnnotation(classLoader, packageName)) {
+		for(String className : ClassScanner.findClassesWithAnnotation(classLoader, packageName, ExposedClass.class)) {
 			Class<?> c;
 			try {
-				c = classLoader.loadClass(className);
+				c = classLoader.loadClass(className.replace("/", "."));
 			} catch (ClassNotFoundException e) {
 				throw new RuntimeException(e);
 			}
@@ -164,9 +133,7 @@ public abstract class DefaultDispatcher implements Dispatcher {
 	}
 	
 	public RequestContext getMethod(String path, HttpServletRequest request) {
-		RequestContext ctx = new RequestContext();
-		ctx.httpRequest = request;
-		ctx.parameters = new HashMap<String, String>();
+		Map<String,String> parameters = new HashMap<String, String>();
 		
 		for(UrlBinding binding: bindings) {
 			Matcher m = binding.urlRegExp.matcher(path);
@@ -181,16 +148,13 @@ public abstract class DefaultDispatcher implements Dispatcher {
 				}
 				
 				Map<String, String> pathParameters = binding.urlRegExp.getAllGroups(m);
-				ctx.parameters.putAll(pathParameters);
-				cleanupRequestParameters(request, ctx.parameters);
-				ctx.handler = constructBoundMethod(binding.methodAndParams);
-				ctx.urlBinding = binding;
-				return ctx;
+				parameters.putAll(pathParameters);
+				cleanupRequestParameters(request, parameters);
+				return new RequestContext(request, parameters, binding.methodAndParams, binding);
 			}
 		}
 		
 		// if we reached here, we didn't find a matching binding
-		ctx.handler = constructBoundMethod(notFoundHandler);
-		return ctx;
+		return new RequestContext(request, parameters, notFoundHandler, null);
 	}
 }

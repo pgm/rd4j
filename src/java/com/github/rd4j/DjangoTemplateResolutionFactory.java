@@ -15,6 +15,6 @@ public class DjangoTemplateResolutionFactory {
 	}
 	
 	public DjangoTemplateResolution create(String filename) {
-		return new DjangoTemplateResolution(context, filename, expressionParser.createContext());
+		return new DjangoTemplateResolution(context, filename, expressionParser.createContext(), this.expressionParser);
 	}
 }

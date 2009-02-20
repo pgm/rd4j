@@ -25,7 +25,7 @@ public class InjectorInterceptor implements RequestInterceptor {
 	}
 
 	public Resolution intercept(RequestContext ctx) {
-		Object target = ctx.handler.getTarget();
+		Object target = ctx.getHandler().getTarget();
 		for(Field field:target.getClass().getFields()) {
 			InjectThis annotation = field.getAnnotation(InjectThis.class);
 			if(annotation != null) {
