@@ -2,6 +2,7 @@ package com.github.rd4j.analysis;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -63,13 +64,13 @@ public class ParameterTypeReader {
 	                  signature,
 	                  exceptions);
 			nodes.add(node);
-			
 			return node;
 		}
 
 		@Override
 		public void visitEnd() {
-			Map<String,Method> nameToMethod = new HashMap<String,Method>();
+			Map<String,java.lang.reflect.Type[]> nameToMethod = new HashMap<String,java.lang.reflect.Type[]>();
+			
 			for(Method m : clazz.getMethods()) {
 				if(methodNamesToIgnore.contains(m.getName()))
 					continue;
@@ -77,7 +78,15 @@ public class ParameterTypeReader {
 				if(nameToMethod.containsKey(m.getName())) {
 					throw new RuntimeException("polymorphic methods not supported.  "+m.getName()+" already exists in class");
 				}
-				nameToMethod.put(m.getName(), m);
+				nameToMethod.put(m.getName(), m.getGenericParameterTypes());
+			}
+		
+			for(Constructor c : clazz.getConstructors()) {
+				String name = "<init>";
+				if(nameToMethod.containsKey(name) ){
+					throw new RuntimeException("polymorphic methods not supported.  "+name+" already exists in class");
+				}
+				nameToMethod.put(name, c.getGenericParameterTypes());
 			}
 			
 			// now that we've got all the nodes
@@ -89,11 +98,11 @@ public class ParameterTypeReader {
 					start ++;
 				
 				List<MethodParameter> parameters = new ArrayList<MethodParameter>();
-				Method methodRef = nameToMethod.get(node.name);
-				if (methodRef == null)
+				java.lang.reflect.Type[] parameterTypes = nameToMethod.get(node.name);
+				if (parameterTypes == null)
+				{
 					continue;
-				
-				java.lang.reflect.Type[] parameterTypes = methodRef.getGenericParameterTypes();
+				} 
 				
 				for(int i = 0; i<argTypes.length; i++) {
 					LocalVariableNode local = (LocalVariableNode) node.localVariables.get(i+start);

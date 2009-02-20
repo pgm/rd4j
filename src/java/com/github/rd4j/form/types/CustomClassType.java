@@ -66,7 +66,7 @@ public class CustomClassType implements ClassType {
 	public String[] getParameterNames(Constructor method)
 	{
 		Map<String, MethodParameter[]> map = DefaultDispatcher.getMethodParameterMap(method.getDeclaringClass());
-		MethodParameter [] parameters = map.get("_init_");
+		MethodParameter [] parameters = map.get("<init>");
 		String [] parameterNames = new String[parameters.length];
 		for(int i=0;i<parameters.length;i++)
 		{
